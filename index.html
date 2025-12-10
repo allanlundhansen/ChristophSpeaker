@@ -267,7 +267,13 @@
                          <!-- Source / Inspiration (Visual Cards) -->
                          <div class="pt-4 border-t border-gray-100">
                              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sources / Inspiration</label>
-                             <div class="space-y-3 mb-3">
+                             <input 
+                                v-model="sourceInput" 
+                                @keydown.enter.prevent="addSource" 
+                                type="text" 
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5 mb-3" 
+                                placeholder="Paste Link & Enter to Add Card...">
+                             <div class="space-y-3">
                                 <div v-for="(source, index) in parsedSources" :key="index" class="relative group rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                                     
                                     <!-- YouTube Card -->
@@ -316,12 +322,6 @@
                                     </button>
                                 </div>
                              </div>
-                             <input 
-                                v-model="sourceInput" 
-                                @keydown.enter.prevent="addSource" 
-                                type="text" 
-                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" 
-                                placeholder="Paste Link & Enter to Add Card...">
                          </div>
                     </div>
                 </aside>
