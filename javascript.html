@@ -1,0 +1,120 @@
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            currentRole: 'All', // Default to All
+            viewMode: 'dashboard', // dashboard | edit
+            layoutMode: 'grid', // grid | list
+            editingVideo: {}, // Object for the form
+            saving: false,
+
+            loading: true,
+            videos: [],
+            error: null,
+            filterStatus: 'All'
+        },
+        computed: {
+            filteredVideos() {
+                let filtered = this.videos;
+
+                // 1. Apply Role Filter (if not All)
+                if (this.currentRole !== 'All') {
+                    if (this.currentRole === 'Author') {
+                        filtered = filtered.filter(v => v.status === 'draft');
+                    } else if (this.currentRole === 'Director') {
+                        filtered = filtered.filter(v => ['recording_ready', 'recording'].includes(v.status));
+                    } else if (this.currentRole === 'Speaker') {
+                        filtered = filtered.filter(v => v.status === 'recording');
+                    } else if (this.currentRole === 'Editor') {
+                        filtered = filtered.filter(v => v.status === 'edit_ready');
+                    } else if (this.currentRole === 'Manager') {
+                        filtered = filtered.filter(v => ['publish_ready', 'published'].includes(v.status));
+                    }
+                }
+
+                // 2. Apply Manual Dropdown Filter (Only if Role is All)
+                if (this.currentRole === 'All' && this.filterStatus !== 'All') {
+                    filtered = filtered.filter(v => v.status === this.filterStatus);
+                }
+
+                // 3. Sort by Status Order
+                const statusOrder = this.statuses;
+                filtered.sort((a, b) => {
+                    return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+                });
+
+                return filtered;
+            },
+            statuses() {
+                return ['draft', 'recording_ready', 'recording', 'edit_ready', 'publish_ready', 'published'];
+            }
+        },
+        mounted() {
+            this.fetchVideos(); // Initial load
+
+            // Auto-refresh every 1 second
+            setInterval(() => {
+                // Only poll if we are NOT currently saving or editing (optional, but safe)
+                if (!this.saving && this.viewMode === 'dashboard') {
+                    this.fetchVideos(true); // true = silent mode
+                }
+            }, 1000);
+        },
+        methods: {
+            fetchVideos(silent = false) {
+                if (!silent) this.loading = true;
+                google.script.run
+                    .withSuccessHandler(this.onVideosLoaded)
+                    .withFailureHandler(this.onFailure)
+                    .getVideos();
+            },
+            onVideosLoaded(data) {
+                this.videos = data;
+                this.loading = false;
+            },
+            onFailure(error) {
+                this.error = "Error loading videos: " + error.message;
+                this.loading = false;
+            },
+            // ACTIONS
+            openNewVideoModal() {
+                this.editingVideo = { status: 'draft' };
+                this.viewMode = 'edit';
+            },
+            openEditModal(video) {
+                // Deep copy to avoid mutating dashboard list while editing
+                this.editingVideo = JSON.parse(JSON.stringify(video));
+                this.viewMode = 'edit';
+            },
+            closeModal() {
+                this.viewMode = 'dashboard';
+                this.editingVideo = {};
+            },
+            saveVideo() {
+                this.saving = true;
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.saving = false;
+                        this.closeModal();
+                        this.fetchVideos(); // Reload list
+                    })
+                    .withFailureHandler((err) => {
+                        this.saving = false;
+                        alert("Save Failed: " + err.message);
+                    })
+                    .saveVideo(this.editingVideo);
+            },
+            getStatusColor(status) {
+                const colors = {
+                    'draft': 'bg-gray-200 text-gray-800',
+                    'recording_ready': 'bg-yellow-100 text-yellow-800',
+                    'recording': 'bg-red-100 text-red-800',
+                    'edit_ready': 'bg-purple-100 text-purple-800',
+                    'publish_ready': 'bg-green-100 text-green-800',
+                    'published': 'bg-green-500 text-white'
+                };
+                return colors[status] || 'bg-gray-100';
+            }
+        }
+    });
+</script>

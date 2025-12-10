@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <?!= include('stylesheet'); ?>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app" class="min-h-screen flex flex-col" v-cloak>
+        <!-- Navbar -->
+        <nav class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="text-xl font-bold text-gray-900 mr-8">YSMS</span>
+
+                        <!-- Role Selector -->
+                        <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                            <span class="text-xs text-gray-500 px-2">View As:</span>
+                            <select v-model="currentRole"
+                                class="bg-transparent border-none text-sm font-medium focus:ring-0 text-gray-700 h-8">
+                                <option value="All">All Roles</option>
+                                <option value="Author">Author</option>
+                                <option value="Director">Director (Prep)</option>
+                                <option value="Speaker">Speaker (Studio)</option>
+                                <option value="Editor">Editor (Cuts)</option>
+                                <option value="Manager">Manager (Publish)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <select v-if="currentRole === 'All'" v-model="filterStatus"
+                            class="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="All">All Views</option>
+                            <option v-for="status in statuses" :value="status">{{ status }}</option>
+                        </select>
+                        <!-- New Video Button -->
+                        <button @click="openNewVideoModal"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm">
+                            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            New Video
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Navbar (Filters & Layout) -->
+            <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center h-12">
+                 <div class="text-xs text-gray-500">
+                    Showing {{ filteredVideos.length }} videos
+                 </div>
+                 <div class="flex items-center space-x-2">
+                    <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    </button>
+                    <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
+                 </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 bg-gray-50 p-6">
+            <div class="max-w-7xl mx-auto">
+
+                <!-- Loading State -->
+                <div v-if="loading" class="text-center py-10">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p class="mt-4 text-gray-500">Loading pipeline...</p>
+                </div>
+
+                <!-- Error State -->
+                <div v-if="error" class="bg-red-50 p-4 rounded-md mb-6">
+                    <div class="flex">
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Error</h3>
+                            <div class="mt-2 text-sm text-red-700">{{ error }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div v-if="!loading && layoutMode === 'grid'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div v-for="video in filteredVideos" :key="video.id"
+                        class="bg-white overflow-hidden shadow rounded-lg card-hover transition-all duration-200">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <span
+                                    :class="['px-2 inline-flex text-xs leading-5 font-semibold rounded-full', getStatusColor(video.status)]">
+                                    {{ video.status }}
+                                </span>
+                                <span class="text-xs text-gray-400">{{ video.date }}</span>
+                            </div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{{ video.title_de }}</h3>
+
+                            <div class="mt-4 flex justify-end space-x-3 border-t pt-4">
+                                <button @click="openEditModal(video)"
+                                    class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
+                                <button v-if="video.status === 'recording_ready'"
+                                    class="text-red-600 hover:text-red-900 text-sm font-medium">Record</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard List (Table) -->
+                <div v-if="!loading && layoutMode === 'list'" class="bg-white shadow overflow-hidden sm:rounded-md">
+                    <ul class="divide-y divide-gray-200">
+                        <li v-for="video in filteredVideos" :key="video.id">
+                            <div class="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50 transition duration-150 ease-in-out">
+                                <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <span :class="['px-2 inline-flex text-xs leading-5 font-semibold rounded-full w-24 justify-center', getStatusColor(video.status)]">
+                                                {{ video.status }}
+                                            </span>
+                                        </div>
+                                        <div class="ml-4 truncate">
+                                            <div class="flex text-sm">
+                                                <p class="font-medium text-indigo-600 truncate">{{ video.title_de }}</p>
+                                            </div>
+                                            <div class="mt-2 flex">
+                                                <div class="flex items-center text-xs text-gray-500">
+                                                    {{ video.text_de ? video.text_de.substring(0, 60) + '...' : 'No Text' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
+                                        <div class="flex overflow-hidden text-sm space-x-4 items-center">
+                                           <div class="text-xs text-gray-400">{{ video.date }}</div>
+                                           <button @click="openEditModal(video)" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Empty State -->
+                <div v-if="filteredVideos.length === 0"
+                    class="col-span-full text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 13h6m-3-3v6m5 5H6a2 2 0 01-2-2V6a2 2 0 012-2h11a2 2 0 012 2v11a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No videos found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new video idea.</p>
+                    <div class="mt-6">
+                        <button @click="openNewVideoModal" type="button"
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            New Video
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    <!-- Main Content -->
+    <!-- ... (Main Content remains, just adding the key handler wrapper if needed, but here we just append the modal) ... -->
+
+    <!-- Modal: Edit/Create Video -->
+    <div v-show="viewMode === 'edit'" style="display: none;" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                @click="closeModal"></div>
+
+            <!-- Modal Panel -->
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                {{ editingVideo.id ? 'Edit Video' : 'New Video Idea' }}
+                            </h3>
+                            <div class="mt-4 space-y-4">
+
+                                <!-- Title -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">German Title
+                                        (Original)</label>
+                                    <input v-model="editingVideo.title_de" type="text"
+                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        placeholder="e.g. Sales Mistakes #1">
+                                </div>
+
+                                <!-- Status -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                                    <select v-model="editingVideo.status"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option v-for="status in statuses" :value="status">{{ status }}</option>
+                                    </select>
+                                </div>
+
+                                <!-- Idea/Notes -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Ideas / Notes</label>
+                                    <textarea v-model="editingVideo.ideas" rows="3"
+                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
+                                </div>
+
+                                <!-- Script (Text DE) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Script (German)</label>
+                                    <textarea v-model="editingVideo.text_de" rows="5"
+                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        placeholder="Enter the full script here..."></textarea>
+                                </div>
+
+                                <!-- Director Notes (Only visible if Director or later) -->
+                                <div v-if="currentRole === 'Director' || currentRole === 'All'">
+                                    <label class="block text-sm font-medium text-gray-700 text-yellow-700">Director
+                                        Notes</label>
+                                    <input v-model="editingVideo.director_notes" type="text"
+                                        class="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-yellow-300 rounded-md p-2 border bg-yellow-50">
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="saveVideo" type="button"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        {{ saving ? 'Saving...' : 'Save' }}
+                    </button>
+                    <button @click="closeModal" type="button"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div> <!-- Close #app -->
+    <?!= include('javascript'); ?>
+</body>
+
+</html>
