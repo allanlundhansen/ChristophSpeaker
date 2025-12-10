@@ -105,8 +105,10 @@
 
                             <div class="mt-4 flex justify-end space-x-3 border-t pt-4">
                                 <span class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</span>
-                                <span v-if="video.status === 'recording_ready'" @click.stop=""
-                                    class="text-red-600 hover:text-red-900 text-sm font-medium">Record</span>
+                                <span v-if="video.status === 'recording_ready'" @click.stop="" class="text-red-600 hover:text-red-900 text-sm font-medium">Record</span>
+                                <button @click.stop="deleteVideo(video)" class="text-gray-400 hover:text-red-600">
+                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -139,6 +141,9 @@
                                         <div class="flex overflow-hidden text-sm space-x-4 items-center">
                                            <div class="text-xs text-gray-400">{{ video.date }}</div>
                                            <span class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</span>
+                                           <button @click.stop="deleteVideo(video)" class="text-gray-400 hover:text-red-600 ml-2">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                           </button>
                                         </div>
                                     </div>
                                 </div>
@@ -195,6 +200,11 @@
                          </div>
 
                          <div class="h-6 w-px bg-gray-300"></div>
+
+                         <!-- Delete Button -->
+                         <button @click="deleteVideo()" type="button" class="text-gray-400 hover:text-red-600 transition-colors p-2" title="Delete Video">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                         </button>
 
                          <span v-if="saving" class="text-xs text-indigo-500 font-medium animate-pulse uppercase tracking-wider">Saving...</span>
                          <button @click="saveVideo" class="inline-flex items-center px-4 py-1.5 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all">
@@ -254,15 +264,64 @@
                         </div>
 
                          <!-- URLs -->
-                         <div class="pt-4 border-t border-gray-100 space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Raw Footage (Dropbox)</label>
-                                <input v-model="editingVideo.raw_footage_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs py-1 text-blue-600" placeholder="https://dropbox...">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">Final Video (Drive)</label>
-                                <input v-model="editingVideo.final_video_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-xs py-1 text-green-600" placeholder="https://drive...">
-                            </div>
+                         <!-- Source / Inspiration (Visual Cards) -->
+                         <div class="pt-4 border-t border-gray-100">
+                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sources / Inspiration</label>
+                             <div class="space-y-3 mb-3">
+                                <div v-for="(source, index) in parsedSources" :key="index" class="relative group rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                    
+                                    <!-- YouTube Card -->
+                                    <div v-if="source.type === 'youtube'" class="aspect-video relative cursor-pointer" @click="openLink(source.url)">
+                                        <img :src="source.thumb" class="w-full h-full object-cover">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                                            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                                                <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- TikTok Card (Black Theme) -->
+                                    <div v-else-if="source.type === 'tiktok'" class="bg-gray-900 aspect-video flex flex-col items-center justify-center cursor-pointer p-4 relative" @click="openLink(source.url)">
+                                        <svg class="w-8 h-8 text-white mb-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.65-1.58-1.09-.09 5.05-1.93 10.05-5.59 13.56-3.8 3.59-9.92 3.85-14.25 1.03C-7.22 19.39-3.4 8.76 2.4 8.24c2.25-.2 4.27 1.05 4.98 3.09v-7.3m2.56 12.45v.06c.03 1.11-.96 2.05-2.06 2.05-1.11 0-2.07-.94-2.08-2.04 0-1.1.96-2.05 2.07-2.05 1.1 0 2.04.94 2.07 2.03"/></svg>
+                                        <span class="text-xs font-bold text-gray-200">TikTok Video</span>
+                                    </div>
+
+                                    <!-- Instagram Card (Gradient Theme) -->
+                                    <div v-else-if="source.type === 'instagram'" class="bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 aspect-video flex flex-col items-center justify-center cursor-pointer p-4 relative" @click="openLink(source.url)">
+                                        <svg class="w-8 h-8 text-white mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01M7.8 21h8.4a5 5 0 005-5V8a5 5 0 00-5-5H7.8a5 5 0 00-5 5v8a5 5 0 005 5z" /></svg>
+                                        <span class="text-xs font-bold text-white">Instagram Post</span>
+                                    </div>
+
+                                    <!-- Generic Card (Now with Rich Metadata) -->
+                                    <div v-else class="bg-gray-50 flex flex-col cursor-pointer hover:bg-gray-100 transition-colors h-full" @click="openLink(source.url)">
+                                        <!-- Image Header -->
+                                        <div v-if="source.thumb" class="aspect-video w-full overflow-hidden border-b border-gray-100">
+                                            <img :src="source.thumb" class="w-full h-full object-cover">
+                                        </div>
+                                        <!-- Fallback Icon Header -->
+                                        <div v-else class="aspect-video w-full flex items-center justify-center bg-gray-100 border-b border-gray-200 text-gray-400">
+                                            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                        </div>
+
+                                        <!-- Text Content -->
+                                        <div class="p-3 flex-1 flex flex-col min-h-0">
+                                            <h4 class="text-xs font-bold text-gray-700 line-clamp-2 leading-tight mb-1" :title="source.label">{{ source.label }}</h4>
+                                            <p class="text-[10px] text-gray-500 line-clamp-2 leading-snug">{{ source.description || source.url }}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Remove Button -->
+                                    <button @click.stop="removeSource(index)" class="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                             </div>
+                             <input 
+                                v-model="sourceInput" 
+                                @keydown.enter.prevent="addSource" 
+                                type="text" 
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" 
+                                placeholder="Paste Link & Enter to Add Card...">
                          </div>
                     </div>
                 </aside>
@@ -284,26 +343,44 @@
                     <!-- Editor Split -->
                     <div class="flex-grow flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200 bg-white shadow-sm m-4 rounded-lg overflow-hidden border border-gray-200">
                         <!-- German Input -->
-                        <div class="flex-1 flex flex-col p-6 bg-white">
-                             <div class="flex justify-between items-center mb-4">
-                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">🇩🇪 German (Original)</label>
+                        <div class="flex-1 flex flex-col p-6 bg-white space-y-4">
+                             <div class="flex flex-col">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Video Title (DE)</label>
+                                <input 
+                                    v-model="editingVideo.title_de" 
+                                    @input="debouncedTranslate('title_de', editingVideo.title_de)"
+                                    type="text" 
+                                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-bold text-base" 
+                                    placeholder="Enter German Title...">
                              </div>
-                             <textarea 
-                                v-model="editingVideo.text_de" 
-                                @input="debouncedTranslate('text_de', editingVideo.text_de)"
-                                class="flex-grow w-full border-none p-0 resize-none focus:ring-0 text-lg leading-relaxed text-gray-800 placeholder-gray-300 font-serif" 
-                                placeholder="Start writing script here..."></textarea>
+                             <div class="flex-grow flex flex-col">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Script Content (DE)</label>
+                                <textarea 
+                                    v-model="editingVideo.text_de" 
+                                    @input="debouncedTranslate('text_de', editingVideo.text_de)"
+                                    class="flex-grow w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3 resize-none text-base leading-relaxed text-gray-800 placeholder-gray-400 font-serif" 
+                                    placeholder="Start writing script here..."></textarea>
+                             </div>
                         </div>
+                        
                         <!-- English Output -->
-                        <div class="flex-1 flex flex-col p-6 bg-gray-50/50">
-                             <div class="flex justify-between items-center mb-4">
-                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">🇺🇸 English (Translated)</label>
+                        <div class="flex-1 flex flex-col p-6 bg-gray-50/50 space-y-4">
+                             <div class="flex flex-col">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Video Title (EN)</label>
+                                <input 
+                                    :value="editingVideo.title_en" 
+                                    readonly
+                                    type="text" 
+                                    class="block w-full border-gray-200 bg-gray-100 rounded-md shadow-sm text-gray-600 font-bold text-base cursor-default focus:ring-0" 
+                                    placeholder="Translated Title...">
                              </div>
-                             <div class="flex-grow overflow-y-auto">
-                                <h2 class="text-xl font-bold text-gray-800 mb-4 font-serif">{{ editingVideo.title_en }}</h2>
-                                <div class="prose prose-lg text-gray-600 leading-relaxed font-serif whitespace-pre-wrap">
-                                    {{ editingVideo.text_en || 'Translation will appear here...' }}
-                                </div>
+                             <div class="flex-grow flex flex-col">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Script Content (EN)</label>
+                                <textarea 
+                                    :value="editingVideo.text_en" 
+                                    readonly
+                                    class="flex-grow w-full border-gray-200 bg-gray-100 rounded-md shadow-sm p-3 resize-none text-base leading-relaxed text-gray-600 font-serif focus:ring-0 cursor-default" 
+                                    placeholder="Translation will appear here..."></textarea>
                              </div>
                         </div>
                     </div>
@@ -335,24 +412,41 @@
                         <div class="space-y-4 pt-4 border-t border-gray-100">
                              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Distribution</label>
                              
-                             <!-- Source -->
-                             <div>
-                                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Source / Inspiration</label>
-                                 <input v-model="editingVideo.source_link" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" placeholder="https://tiktok.com/...">
+                             <!-- Files -->
+                             <div class="space-y-3 pb-4 border-b border-gray-100">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Raw Footage (Dropbox)</label>
+                                    <input v-model="editingVideo.raw_footage_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs py-1.5 text-blue-600" placeholder="https://dropbox...">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">Final Video (Drive)</label>
+                                    <input v-model="editingVideo.final_video_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-xs py-1.5 text-green-600" placeholder="https://drive...">
+                                </div>
                              </div>
 
-                             <div class="space-y-2">
-                                 <div class="flex rounded-md shadow-sm">
-                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-red-50 text-red-600 text-[10px] font-bold">YT</span>
-                                    <input v-model="editingVideo.link_youtube" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-red-500 focus:border-red-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="Shorts Link">
+                             <div class="space-y-3">
+                                 <!-- YouTube -->
+                                 <div class="relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                                    </div>
+                                    <input v-model="editingVideo.link_youtube" type="text" class="focus:ring-red-500 focus:border-red-500 block w-full pl-10 sm:text-xs border-gray-300 rounded-md py-2" placeholder="YouTube Shorts Link">
                                  </div>
-                                 <div class="flex rounded-md shadow-sm">
-                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-pink-50 text-pink-600 text-[10px] font-bold">IG</span>
-                                    <input v-model="editingVideo.link_instagram" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-pink-500 focus:border-pink-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="Reels Link">
+
+                                 <!-- Instagram -->
+                                 <div class="relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-4 w-4 text-pink-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                    </div>
+                                    <input v-model="editingVideo.link_instagram" type="text" class="focus:ring-pink-500 focus:border-pink-500 block w-full pl-10 sm:text-xs border-gray-300 rounded-md py-2" placeholder="Instagram Reel Link">
                                  </div>
-                                 <div class="flex rounded-md shadow-sm">
-                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-600 text-[10px] font-bold">TT</span>
-                                    <input v-model="editingVideo.link_tiktok" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-gray-500 focus:border-gray-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="TikTok Link">
+
+                                 <!-- TikTok -->
+                                 <div class="relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-4 w-4 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.65-1.58-1.09-.09 5.05-1.93 10.05-5.59 13.56-3.8 3.59-9.92 3.85-14.25 1.03C-7.22 19.39-3.4 8.76 2.4 8.24c2.25-.2 4.27 1.05 4.98 3.09v-7.3m2.56 12.45v.06c.03 1.11-.96 2.05-2.06 2.05-1.11 0-2.07-.94-2.08-2.04 0-1.1.96-2.05 2.07-2.05 1.1 0 2.04.94 2.07 2.03"/></svg>
+                                    </div>
+                                    <input v-model="editingVideo.link_tiktok" type="text" class="focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 sm:text-xs border-gray-300 rounded-md py-2" placeholder="TikTok Link">
                                  </div>
                              </div>
                         </div>
@@ -360,8 +454,7 @@
                      </div>
                 </aside>
 
-             </main>
-        </div>
+                <!-- Buttons removed: consolidated in Header -->
 
     <!-- Modal: Edit/Create Video -->
     <div v-if="viewMode === 'edit'" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

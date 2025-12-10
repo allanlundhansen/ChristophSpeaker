@@ -2,15 +2,15 @@
     new Vue({
         el: '#app',
         data: {
-            currentRole: 'All', // Default to All
-            viewMode: 'dashboard', // dashboard | edit
-            layoutMode: 'grid', // grid | list
-            editingVideo: {}, // Object for the form
+            currentRole: 'All',
+            viewMode: 'dashboard',
+            layoutMode: 'grid',
+            editingVideo: {},
+            tagInput: '',
+            sourceInput: '',
             saving: false,
             translating: false,
             debounceTimer: null,
-            tagInput: '', // For the pill input field
-
             loading: true,
             videos: [],
             error: null,
@@ -20,7 +20,6 @@
             filteredVideos() {
                 let filtered = this.videos;
 
-                // 1. Apply Role Filter (if not All)
                 if (this.currentRole !== 'All') {
                     if (this.currentRole === 'Author') {
                         filtered = filtered.filter(v => v.status === 'draft');
@@ -35,12 +34,10 @@
                     }
                 }
 
-                // 2. Apply Manual Dropdown Filter (Only if Role is All)
                 if (this.currentRole === 'All' && this.filterStatus !== 'All') {
                     filtered = filtered.filter(v => v.status === this.filterStatus);
                 }
 
-                // 3. Sort by Status Order
                 const statusOrder = this.statuses;
                 filtered.sort((a, b) => {
                     return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
@@ -52,18 +49,64 @@
                 return ['draft', 'recording_ready', 'recording', 'edit_ready', 'publish_ready', 'published'];
             },
             customTags() {
-                // Computed getter for the tags string to ensure reactivity in the pill list
                 return this.editingVideo.tags || '';
+            },
+            // PARSES BOTH LEGACY STRINGS AND NEW JSON OBJECTS
+            parsedSources() {
+                // Ensure we handle the source_link whether it's a newline string OR a JSON string
+                let raw = this.editingVideo.source_link || '';
+                let links = [];
+
+                // Detect if JSON
+                if (raw.trim().startsWith('[')) {
+                    try {
+                        links = JSON.parse(raw);
+                    } catch (e) {
+                        links = []; // Fallback
+                    }
+                } else {
+                    // Legacy: split by newline, convert to simple objects
+                    links = raw.split('\n').filter(Boolean).map(url => ({ url, text: url })); // text fallback
+                }
+
+                return links.map(linkObj => {
+                    const link = linkObj.url || linkObj;
+                    let type = 'generic';
+                    let thumb = linkObj.image || ''; // Use metadata image if available
+                    let label = linkObj.title || linkObj.hostname || 'Link';
+                    let color = 'gray';
+
+                    // YouTube (Auto-detect overrides metadata if its a direct YT link, usually better thumb)
+                    const ytMatch = link.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+                    
+                    if (ytMatch) {
+                        type = 'youtube';
+                        label = 'YouTube User'; 
+                        color = 'red';
+                        thumb = 'https://img.youtube.com/vi/' + ytMatch[1] + '/mqdefault.jpg';
+                    } else if (link.indexOf('tiktok.com') !== -1) {
+                        type = 'tiktok';
+                        label = 'TikTok';
+                        color = 'gray';
+                    } else if (link.indexOf('instagram.com') !== -1) {
+                        type = 'instagram';
+                        label = 'Instagram';
+                        color = 'pink';
+                    } else if (!thumb) {
+                         // Logic for generic without metadata image?
+                         // We rely on the object having it.
+                    }
+
+                    return { url: link, type, thumb, label, color, description: linkObj.description };
+                });
             }
         },
         mounted() {
-            this.fetchVideos(); // Initial load
+            this.fetchVideos();
 
-            // Auto-refresh every 1 second
             setInterval(() => {
-                // Only poll if we are NOT currently saving or editing (optional, but safe)
                 if (!this.saving && this.viewMode === 'dashboard') {
-                    this.fetchVideos(true); // true = silent mode
+                    this.fetchVideos(true);
                 }
             }, 1000);
         },
@@ -83,20 +126,18 @@
                 this.error = "Error loading videos: " + error.message;
                 this.loading = false;
             },
-            // ACTIONS
             openNewVideoModal() {
                 this.editingVideo = { status: 'draft' };
-                this.viewMode = 'edit'; // Back to Modal
+                this.viewMode = 'edit';
             },
             openEditModal(video) {
-                // Legacy: If we want to open modal for editing existing, we can keeps this.
-                // But generally clicking the card opens detail view now.
                 this.editingVideo = JSON.parse(JSON.stringify(video));
                 this.viewMode = 'edit';
             },
             openDetailView(video) {
-                // Deep copy
                 this.editingVideo = JSON.parse(JSON.stringify(video));
+                this.tagInput = '';
+                this.sourceInput = '';
                 this.viewMode = 'detail';
             },
             closeDetailView() {
@@ -115,16 +156,35 @@
                         this.saving = false;
                         if (wasEditing) {
                             this.closeModal();
-                        } else {
-                            this.closeDetailView();
                         }
-                        this.fetchVideos(); // Reload list
+                        this.fetchVideos(true);
                     })
                     .withFailureHandler((err) => {
                         this.saving = false;
                         alert("Save Failed: " + err.message);
                     })
                     .saveVideo(this.editingVideo);
+            },
+            deleteVideo(video) {
+                // If video is passed (Dashboard delete), use it. Otherwise use editingVideo (Detail delete).
+                const targetId = video ? video.id : this.editingVideo.id;
+                
+                if(!confirm("Are you sure you want to delete this video? This cannot be undone.")) return;
+                
+                // If deleting the currently open video, we show saving state
+                if (!video) this.saving = true;
+
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.saving = false;
+                        if (!video) this.closeDetailView(); // Close only if inside detail view
+                        this.fetchVideos(true);
+                    })
+                    .withFailureHandler((err) => {
+                        this.saving = false;
+                        alert("Delete Failed: " + err);
+                    })
+                    .deleteVideo(targetId);
             },
             getStatusColor(status) {
                 const colors = {
@@ -137,7 +197,6 @@
                 };
                 return colors[status] || 'bg-gray-100';
             },
-            // TRANSLATION LOGIC
             translateField(text, targetField) {
                 if (!text) {
                     this.$set(this.editingVideo, targetField, "");
@@ -150,7 +209,7 @@
                         this.translating = false;
                     })
                     .withFailureHandler(() => {
-                        this.translating = false; // Fail silently or log
+                        this.translating = false;
                     })
                     .translateText(text, 'de', 'en');
             },
@@ -159,12 +218,11 @@
                 this.debounceTimer = setTimeout(() => {
                     const target = field === 'title_de' ? 'title_en' : 'text_en';
                     this.translateField(val, target);
-                }, 1000); // 1 second debounce
+                }, 1000);
             },
-            // TAGS LOGIC
             addTag() {
                 if (!this.tagInput) return;
-                const newTag = this.tagInput.trim().replace(/^#/, ''); // Remove leading hash if typed
+                const newTag = this.tagInput.trim().replace(/^#/, '');
                 if (!newTag) return;
                 
                 let currentTags = this.customTags ? this.customTags.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -172,12 +230,65 @@
                     currentTags.push(newTag);
                     this.$set(this.editingVideo, 'tags', currentTags.join(', '));
                 }
-                this.tagInput = ''; // Clear input
+                this.tagInput = '';
             },
             removeTag(index) {
                 let currentTags = this.customTags ? this.customTags.split(',').map(t => t.trim()).filter(Boolean) : [];
                 currentTags.splice(index, 1);
                 this.$set(this.editingVideo, 'tags', currentTags.join(', '));
+            },
+            // UPGRADED ASYNC SOURCE ADD
+            addSource() {
+                if (!this.sourceInput) return;
+                const newLink = this.sourceInput.trim();
+                if (!newLink) return;
+
+                // Disable input while fetching
+                const originalInput = this.sourceInput;
+                this.sourceInput = 'Fetching Preview...';
+
+                google.script.run
+                 .withSuccessHandler((meta) => {
+                     let current = [];
+                     const raw = this.editingVideo.source_link || '';
+                     if (raw.startsWith('[')) {
+                         try { current = JSON.parse(raw); } catch(e) {}
+                     } else {
+                         current = raw.split('\n').filter(Boolean).map(u => ({ url: u })); 
+                     }
+
+                     // Push new metadata object
+                     if (meta.success) {
+                        current.push(meta); 
+                     } else {
+                         // Fallback if fetch failed
+                        current.push({ url: newLink, title: newLink });
+                     }
+
+                     // Save back as JSON string
+                     this.$set(this.editingVideo, 'source_link', JSON.stringify(current));
+                     this.sourceInput = ''; // Clear
+                 })
+                 .withFailureHandler((err) => {
+                     alert("Could not fetch link: " + err);
+                     this.sourceInput = originalInput;
+                 })
+                 .fetchLinkMetadata(newLink);
+            },
+            removeSource(index) {
+                let current = [];
+                const raw = this.editingVideo.source_link || '';
+                if (raw.startsWith('[')) {
+                    try { current = JSON.parse(raw); } catch(e) {}
+                 } else {
+                    current = raw.split('\n').filter(Boolean).map(u => ({ url: u })); 
+                 }
+                
+                current.splice(index, 1);
+                this.$set(this.editingVideo, 'source_link', JSON.stringify(current));
+            },
+            openLink(url) {
+                window.open(url, '_blank');
             }
         }
     });
