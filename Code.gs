@@ -131,76 +131,56 @@ function saveVideo(data) {
     }
   }
 
-  // If new, generate ID and append
+  // If new, generate ID and determine next row
   if (rowIndex === -1) {
     data.id = Utilities.getUuid();
     data.date = new Date(); // Set creation date
     data.status = data.status || "draft";
-    sheet.appendRow([
-      data.id,
-      data.title_de,
-      data.text_de,
-      data.title_en,
-      data.text_en,
-      data.ideas,
-      data.tags,
-      data.ref_image,
-      data.source_link,
-      data.director_notes,
-      data.editor_instructions,
-      data.raw_footage_url,
-      data.final_video_url,
-      data.link_youtube,
-      data.link_instagram,
-      data.link_tiktok,
-      data.status,
-      data.date,
-    ]);
-  } else {
-    // Update existing row (Naive update: just update mutable fields)
-    // For simplicity in this iteration, we recreate the row array.
-    // In production, we might want to update specific cells to avoid overwriting concurrent edits,
-    // but for this team size, row overwrite is acceptable.
-    const range = sheet.getRange(rowIndex, 1, 1, 18);
-    // Get existing row to preserve valid dates if not passed
-    // But for now, let's assume 'data' contains what we want to save.
-    // Important: We need to map data object back to array
-    const rowArray = [
-      data.id,
-      data.title_de,
-      data.text_de,
-      data.title_en,
-      data.text_en,
-      data.ideas,
-      data.tags,
-      data.ref_image,
-      data.source_link,
-      data.director_notes,
-      data.editor_instructions,
-      data.raw_footage_url,
-      data.final_video_url,
-      data.link_youtube,
-      data.link_instagram,
-      data.link_tiktok,
-      data.status,
-      data.date || new Date(),
-    ];
-    range.setValues([rowArray]);
+
+    // Scan Column A to find the first truly empty row
+    const ids = sheet.getRange("A:A").getValues();
+    let firstEmpty = ids.length + 1;
+    for (let i = 1; i < ids.length; i++) {
+      if (!ids[i][0]) {
+        firstEmpty = i + 1; // Found it (1-indexed)
+        break;
+      }
+    }
+    rowIndex = firstEmpty;
   }
 
+  // Map data to full row (18 columns)
+  // Col order: ID, Title_DE, Text_DE, Title_EN, Text_EN, Ideas, ...
+  const rowData = [
+    data.id,
+    data.title_de || "",
+    data.text_de || "",
+    data.title_en || "", // Now saving English values directly
+    data.text_en || "",
+    data.ideas || "",
+    data.tags || "",
+    data.ref_image || "",
+    data.source_link || "",
+    data.director_notes || "",
+    data.editor_instructions || "",
+    data.raw_footage_url || "",
+    data.final_video_url || "",
+    data.link_youtube || "",
+    data.link_instagram || "",
+    data.link_tiktok || "",
+    data.status || "draft",
+    data.date || new Date(),
+  ];
+
+  // Write the full row at once
+  sheet.getRange(rowIndex, 1, 1, 18).setValues([rowData]);
   return true;
 }
 
 /**
- * API: Translate Text
- * Uses Google Translate (LanguageApp)
+ * API: Translate text
  */
 function translateText(text, sourceLang, targetLang) {
   if (!text) return "";
-  try {
-    return LanguageApp.translate(text, sourceLang || "de", targetLang || "en");
-  } catch (e) {
-    console.error("Translation Error: " + e.toString());
-    return "Error: " + e.toString();
-  }
+  return LanguageApp.translate(text, sourceLang, targetLang);
 }

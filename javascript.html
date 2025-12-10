@@ -7,6 +7,9 @@
             layoutMode: 'grid', // grid | list
             editingVideo: {}, // Object for the form
             saving: false,
+            translating: false,
+            debounceTimer: null,
+            tagInput: '', // For the pill input field
 
             loading: true,
             videos: [],
@@ -47,6 +50,10 @@
             },
             statuses() {
                 return ['draft', 'recording_ready', 'recording', 'edit_ready', 'publish_ready', 'published'];
+            },
+            customTags() {
+                // Computed getter for the tags string to ensure reactivity in the pill list
+                return this.editingVideo.tags || '';
             }
         },
         mounted() {
@@ -79,12 +86,22 @@
             // ACTIONS
             openNewVideoModal() {
                 this.editingVideo = { status: 'draft' };
-                this.viewMode = 'edit';
+                this.viewMode = 'edit'; // Back to Modal
             },
             openEditModal(video) {
-                // Deep copy to avoid mutating dashboard list while editing
+                // Legacy: If we want to open modal for editing existing, we can keeps this.
+                // But generally clicking the card opens detail view now.
                 this.editingVideo = JSON.parse(JSON.stringify(video));
                 this.viewMode = 'edit';
+            },
+            openDetailView(video) {
+                // Deep copy
+                this.editingVideo = JSON.parse(JSON.stringify(video));
+                this.viewMode = 'detail';
+            },
+            closeDetailView() {
+                this.viewMode = 'dashboard';
+                this.editingVideo = {};
             },
             closeModal() {
                 this.viewMode = 'dashboard';
@@ -92,10 +109,15 @@
             },
             saveVideo() {
                 this.saving = true;
+                const wasEditing = this.viewMode === 'edit';
                 google.script.run
                     .withSuccessHandler(() => {
                         this.saving = false;
-                        this.closeModal();
+                        if (wasEditing) {
+                            this.closeModal();
+                        } else {
+                            this.closeDetailView();
+                        }
                         this.fetchVideos(); // Reload list
                     })
                     .withFailureHandler((err) => {
@@ -114,6 +136,48 @@
                     'published': 'bg-green-500 text-white'
                 };
                 return colors[status] || 'bg-gray-100';
+            },
+            // TRANSLATION LOGIC
+            translateField(text, targetField) {
+                if (!text) {
+                    this.$set(this.editingVideo, targetField, "");
+                    return;
+                }
+                this.translating = true;
+                google.script.run
+                    .withSuccessHandler((translatedText) => {
+                        this.$set(this.editingVideo, targetField, translatedText);
+                        this.translating = false;
+                    })
+                    .withFailureHandler(() => {
+                        this.translating = false; // Fail silently or log
+                    })
+                    .translateText(text, 'de', 'en');
+            },
+            debouncedTranslate(field, val) {
+                if (this.debounceTimer) clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    const target = field === 'title_de' ? 'title_en' : 'text_en';
+                    this.translateField(val, target);
+                }, 1000); // 1 second debounce
+            },
+            // TAGS LOGIC
+            addTag() {
+                if (!this.tagInput) return;
+                const newTag = this.tagInput.trim().replace(/^#/, ''); // Remove leading hash if typed
+                if (!newTag) return;
+                
+                let currentTags = this.customTags ? this.customTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+                if (!currentTags.includes(newTag)) {
+                    currentTags.push(newTag);
+                    this.$set(this.editingVideo, 'tags', currentTags.join(', '));
+                }
+                this.tagInput = ''; // Clear input
+            },
+            removeTag(index) {
+                let currentTags = this.customTags ? this.customTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+                currentTags.splice(index, 1);
+                this.$set(this.editingVideo, 'tags', currentTags.join(', '));
             }
         }
     });

@@ -9,70 +9,74 @@
 
 <body>
     <div id="app" class="min-h-screen flex flex-col" v-cloak>
-        <!-- Navbar -->
-        <nav class="bg-white shadow-sm border-b">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="text-xl font-bold text-gray-900 mr-8">YSMS</span>
-
-                        <!-- Role Selector -->
-                        <div class="flex items-center bg-gray-100 rounded-lg p-1">
-                            <span class="text-xs text-gray-500 px-2">View As:</span>
-                            <select v-model="currentRole"
-                                class="bg-transparent border-none text-sm font-medium focus:ring-0 text-gray-700 h-8">
-                                <option value="All">All Roles</option>
-                                <option value="Author">Author</option>
-                                <option value="Director">Director (Prep)</option>
-                                <option value="Speaker">Speaker (Studio)</option>
-                                <option value="Editor">Editor (Cuts)</option>
-                                <option value="Manager">Manager (Publish)</option>
-                            </select>
+        
+        <!-- ================= DASHBOARD VIEW ================= -->
+        <div v-if="viewMode === 'dashboard'" class="flex-grow flex flex-col">
+            <!-- Navbar -->
+            <nav class="bg-white shadow-sm border-b">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-16">
+                        <div class="flex">
+                            <div class="flex-shrink-0 flex items-center">
+                                <h1 class="text-xl font-bold text-gray-800">YSMS</h1>
+                            </div>
+                            <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                                <!-- Role Switcher -->
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <span class="text-sm text-gray-500">View As:</span>
+                                    <select v-model="currentRole" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                        <option value="All">All Roles</option>
+                                        <option value="Author">Author</option>
+                                        <option value="Director">Director</option>
+                                        <option value="Speaker">Speaker</option>
+                                        <option value="Editor">Editor</option>
+                                        <option value="Manager">Manager</option>
+                                    </select>
+                                </div>
+                                <!-- Dropdown Filter (Only if Role is All) -->
+                                <div v-if="currentRole === 'All'" class="flex items-center space-x-2 ml-4">
+                                    <span class="text-sm text-gray-500">Filter:</span>
+                                    <select v-model="filterStatus" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                        <option value="All">All Views</option> 
+                                        <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <button @click="openNewVideoModal" type="button"
+                                class="relative inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                New Video
+                            </button>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <select v-if="currentRole === 'All'" v-model="filterStatus"
-                            class="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                            <option value="All">All Views</option>
-                            <option v-for="status in statuses" :value="status">{{ status }}</option>
-                        </select>
-                        <!-- New Video Button -->
-                        <button @click="openNewVideoModal"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm">
-                            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            New Video
-                        </button>
-                    </div>
                 </div>
-            </div>
 
-            <!-- Secondary Navbar (Filters & Layout) -->
-            <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center h-12">
-                 <div class="text-xs text-gray-500">
-                    Showing {{ filteredVideos.length }} videos
-                 </div>
-                 <div class="flex items-center space-x-2">
-                    <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                    </button>
-                    <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
-                 </div>
-            </div>
-        </nav>
+                <!-- Secondary Navbar (Filters & Layout) -->
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center h-12">
+                     <div class="text-xs text-gray-500">
+                        Showing {{ filteredVideos.length }} videos
+                     </div>
+                     <div class="flex items-center space-x-2">
+                        <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                        </button>
+                        <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                     </div>
+                </div>
+            </nav>
 
-        <!-- Main Content -->
-        <main class="flex-1 bg-gray-50 p-6">
-            <div class="max-w-7xl mx-auto">
-
+            <!-- Main Content -->
+            <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
                 <!-- Loading State -->
-                <div v-if="loading" class="text-center py-10">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p class="mt-4 text-gray-500">Loading pipeline...</p>
+                <div v-if="loading" class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
 
                 <!-- Error State -->
@@ -87,8 +91,8 @@
 
                 <!-- Dashboard Grid -->
                 <div v-if="!loading && layoutMode === 'grid'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div v-for="video in filteredVideos" :key="video.id"
-                        class="bg-white overflow-hidden shadow rounded-lg card-hover transition-all duration-200">
+                    <div v-for="video in filteredVideos" :key="video.id" @click="openDetailView(video)"
+                        class="bg-white overflow-hidden shadow rounded-lg card-hover transition-all duration-200 cursor-pointer">
                         <div class="px-4 py-5 sm:p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <span
@@ -100,10 +104,9 @@
                             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{{ video.title_de }}</h3>
 
                             <div class="mt-4 flex justify-end space-x-3 border-t pt-4">
-                                <button @click="openEditModal(video)"
-                                    class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
-                                <button v-if="video.status === 'recording_ready'"
-                                    class="text-red-600 hover:text-red-900 text-sm font-medium">Record</button>
+                                <span class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</span>
+                                <span v-if="video.status === 'recording_ready'" @click.stop=""
+                                    class="text-red-600 hover:text-red-900 text-sm font-medium">Record</span>
                             </div>
                         </div>
                     </div>
@@ -112,7 +115,7 @@
                 <!-- Dashboard List (Table) -->
                 <div v-if="!loading && layoutMode === 'list'" class="bg-white shadow overflow-hidden sm:rounded-md">
                     <ul class="divide-y divide-gray-200">
-                        <li v-for="video in filteredVideos" :key="video.id">
+                        <li v-for="video in filteredVideos" :key="video.id" @click="openDetailView(video)" class="cursor-pointer">
                             <div class="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50 transition duration-150 ease-in-out">
                                 <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                                     <div class="flex items-center">
@@ -135,7 +138,7 @@
                                     <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
                                         <div class="flex overflow-hidden text-sm space-x-4 items-center">
                                            <div class="text-xs text-gray-400">{{ video.date }}</div>
-                                           <button @click="openEditModal(video)" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</button>
+                                           <span class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</span>
                                         </div>
                                     </div>
                                 </div>
@@ -143,15 +146,14 @@
                         </li>
                     </ul>
                 </div>
+                
                 <!-- Empty State -->
-                <div v-if="filteredVideos.length === 0"
+                <div v-if="filteredVideos.length === 0 && !loading"
                     class="col-span-full text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 13h6m-3-3v6m5 5H6a2 2 0 01-2-2V6a2 2 0 012-2h11a2 2 0 012 2v11a2 2 0 01-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H6a2 2 0 01-2-2V6a2 2 0 012-2h11a2 2 0 012 2v11a2 2 0 01-2 2z" />
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-gray-900">No videos found</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new video idea.</p>
                     <div class="mt-6">
                         <button @click="openNewVideoModal" type="button"
                             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -159,22 +161,215 @@
                         </button>
                     </div>
                 </div>
+            </main>
+        </div>
 
-            </div>
-        </main>
-    <!-- Main Content -->
-    <!-- ... (Main Content remains, just adding the key handler wrapper if needed, but here we just append the modal) ... -->
+
+        <!-- ================= DETAILED VIEW (HYBRID STUDIO LIGHT) ================= -->
+        <div v-if="viewMode === 'detail'" class="flex-grow bg-gray-50 flex flex-col min-h-screen font-sans text-gray-900 overflow-hidden">
+             
+             <!-- Header -->
+             <header class="bg-white border-b border-gray-200 z-20 shadow-sm flex-none h-16">
+                <div class="w-full px-6 h-full flex justify-between items-center">
+                    <div class="flex items-center space-x-4 min-w-0 flex-1">
+                        <button @click="closeDetailView" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        </button>
+                        <div class="flex flex-col min-w-0">
+                             <input v-model="editingVideo.title_de" @input="debouncedTranslate('title_de', editingVideo.title_de)" type="text" class="text-lg font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent placeholder-gray-400 w-96 truncate" placeholder="Untitled Video">
+                             <span class="text-xs text-gray-400 font-mono flex items-center">
+                                {{ editingVideo.id }}
+                                <span class="mx-1">•</span>
+                                {{ editingVideo.date }}
+                             </span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3 flex-none">
+                         <!-- Status -->
+                         <div class="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+                             <span class="text-[10px] text-gray-500 px-2 uppercase font-bold tracking-wider">Status</span>
+                             <select v-model="editingVideo.status" class="bg-white text-gray-900 text-xs border-none rounded shadow-sm focus:ring-indigo-500 py-1 pl-2 pr-8 cursor-pointer h-7">
+                                <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
+                            </select>
+                         </div>
+
+                         <div class="h-6 w-px bg-gray-300"></div>
+
+                         <span v-if="saving" class="text-xs text-indigo-500 font-medium animate-pulse uppercase tracking-wider">Saving...</span>
+                         <button @click="saveVideo" class="inline-flex items-center px-4 py-1.5 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all">
+                            Save Studio
+                         </button>
+                    </div>
+                </div>
+             </header>
+
+             <!-- Main Studio Grid -->
+             <main class="flex-grow flex flex-col lg:flex-row overflow-hidden h-[calc(100vh-64px)]">
+                
+                <!-- COL 1: METADATA (Left Sidebar) -->
+                <aside class="w-full lg:w-80 bg-white border-r border-gray-200 flex flex-col overflow-y-auto shrink-0 z-10">
+                    <div class="p-5 space-y-6">
+                        
+                        <!-- Reference Image -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Reference Image</label>
+                            <div class="relative group">
+                                <div v-if="editingVideo.ref_image" class="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 mb-2 relative">
+                                    <img :src="editingVideo.ref_image" class="w-full h-full object-cover">
+                                    <button @click="$set(editingVideo, 'ref_image', '')" class="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors text-xs">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                                <div v-else class="aspect-video bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center mb-2">
+                                    <span class="text-gray-400 text-xs font-medium">No Image</span>
+                                </div>
+                                <input v-model="editingVideo.ref_image" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" placeholder="Paste Image URL">
+                            </div>
+                        </div>
+
+                         <!-- Tags (Pills) -->
+                        <div>
+                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tags</label>
+                             <div class="flex flex-wrap gap-2 mb-2 min-h-[1.5rem]">
+                                <span v-for="(tag, index) in (customTags ? customTags.split(',').filter(Boolean) : [])" :key="index" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    {{ tag.trim() }}
+                                    <button @click="removeTag(index)" class="ml-1 text-indigo-400 hover:text-indigo-600 focus:outline-none">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </span>
+                             </div>
+                             <input 
+                                v-model="tagInput" 
+                                @keydown.enter.prevent="addTag" 
+                                type="text" 
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" 
+                                placeholder="Type tag & Enter...">
+                        </div>
+
+                        <!-- Concept -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Initial Concept</label>
+                            <textarea v-model="editingVideo.ideas" rows="4" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-2 resize-none" placeholder="Draft your ideas..."></textarea>
+                        </div>
+
+                         <!-- URLs -->
+                         <div class="pt-4 border-t border-gray-100 space-y-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Raw Footage (Dropbox)</label>
+                                <input v-model="editingVideo.raw_footage_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs py-1 text-blue-600" placeholder="https://dropbox...">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">Final Video (Drive)</label>
+                                <input v-model="editingVideo.final_video_url" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-xs py-1 text-green-600" placeholder="https://drive...">
+                            </div>
+                         </div>
+                    </div>
+                </aside>
+
+                <!-- COL 2: SCRIPT EDITOR (Central Workspace) -->
+                <section class="flex-1 flex flex-col min-w-0 bg-gray-50 relative">
+                    <!-- Script Header -->
+                    <div class="h-10 bg-white border-b border-gray-200 flex items-center justify-between px-4 sticky top-0 z-10">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center">
+                            <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            Script Workspace
+                        </span>
+                        <div v-if="translating" class="flex items-center space-x-2">
+                             <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                             <span class="text-xs text-indigo-500 font-medium">Auto-Translating...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Editor Split -->
+                    <div class="flex-grow flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200 bg-white shadow-sm m-4 rounded-lg overflow-hidden border border-gray-200">
+                        <!-- German Input -->
+                        <div class="flex-1 flex flex-col p-6 bg-white">
+                             <div class="flex justify-between items-center mb-4">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">🇩🇪 German (Original)</label>
+                             </div>
+                             <textarea 
+                                v-model="editingVideo.text_de" 
+                                @input="debouncedTranslate('text_de', editingVideo.text_de)"
+                                class="flex-grow w-full border-none p-0 resize-none focus:ring-0 text-lg leading-relaxed text-gray-800 placeholder-gray-300 font-serif" 
+                                placeholder="Start writing script here..."></textarea>
+                        </div>
+                        <!-- English Output -->
+                        <div class="flex-1 flex flex-col p-6 bg-gray-50/50">
+                             <div class="flex justify-between items-center mb-4">
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">🇺🇸 English (Translated)</label>
+                             </div>
+                             <div class="flex-grow overflow-y-auto">
+                                <h2 class="text-xl font-bold text-gray-800 mb-4 font-serif">{{ editingVideo.title_en }}</h2>
+                                <div class="prose prose-lg text-gray-600 leading-relaxed font-serif whitespace-pre-wrap">
+                                    {{ editingVideo.text_en || 'Translation will appear here...' }}
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COL 3: PRODUCTION & LINKS (Right Sidebar) -->
+                <aside class="w-full lg:w-80 bg-white border-l border-gray-200 flex flex-col overflow-y-auto shrink-0 z-10">
+                     <div class="p-5 space-y-6">
+                        
+                        <!-- Director Notes -->
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <label class="block text-xs font-bold text-yellow-800 uppercase tracking-wider mb-2 flex items-center">
+                                <svg class="w-3 h-3 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                Director Notes
+                            </label>
+                            <textarea v-model="editingVideo.director_notes" rows="6" class="block w-full bg-transparent border-none p-0 text-sm text-gray-800 placeholder-yellow-800/30 focus:ring-0 resize-none leading-relaxed" placeholder="Notes for filming context..."></textarea>
+                        </div>
+
+                        <!-- Editor Instructions -->
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <label class="block text-xs font-bold text-purple-800 uppercase tracking-wider mb-2 flex items-center">
+                                <svg class="w-3 h-3 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                Editor Instructions
+                            </label>
+                            <textarea v-model="editingVideo.editor_instructions" rows="6" class="block w-full bg-transparent border-none p-0 text-sm text-gray-800 placeholder-purple-800/30 focus:ring-0 resize-none leading-relaxed" placeholder="Instructions for editing..."></textarea>
+                        </div>
+
+                        <!-- Distribution -->
+                        <div class="space-y-4 pt-4 border-t border-gray-100">
+                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Distribution</label>
+                             
+                             <!-- Source -->
+                             <div>
+                                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Source / Inspiration</label>
+                                 <input v-model="editingVideo.source_link" type="text" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs py-1.5" placeholder="https://tiktok.com/...">
+                             </div>
+
+                             <div class="space-y-2">
+                                 <div class="flex rounded-md shadow-sm">
+                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-red-50 text-red-600 text-[10px] font-bold">YT</span>
+                                    <input v-model="editingVideo.link_youtube" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-red-500 focus:border-red-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="Shorts Link">
+                                 </div>
+                                 <div class="flex rounded-md shadow-sm">
+                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-pink-50 text-pink-600 text-[10px] font-bold">IG</span>
+                                    <input v-model="editingVideo.link_instagram" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-pink-500 focus:border-pink-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="Reels Link">
+                                 </div>
+                                 <div class="flex rounded-md shadow-sm">
+                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-600 text-[10px] font-bold">TT</span>
+                                    <input v-model="editingVideo.link_tiktok" type="text" class="flex-1 min-w-0 block w-full px-3 py-1.5 rounded-none rounded-r-md focus:ring-gray-500 focus:border-gray-500 sm:text-xs border-gray-300 placeholder-gray-300" placeholder="TikTok Link">
+                                 </div>
+                             </div>
+                        </div>
+
+                     </div>
+                </aside>
+
+             </main>
+        </div>
 
     <!-- Modal: Edit/Create Video -->
-    <div v-show="viewMode === 'edit'" style="display: none;" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title"
-        role="dialog" aria-modal="true">
+    <div v-if="viewMode === 'edit'" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
-                @click="closeModal"></div>
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeModal"></div>
 
             <!-- Modal Panel -->
-            <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
@@ -182,59 +377,43 @@
                                 {{ editingVideo.id ? 'Edit Video' : 'New Video Idea' }}
                             </h3>
                             <div class="mt-4 space-y-4">
-
                                 <!-- Title -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">German Title
-                                        (Original)</label>
-                                    <input v-model="editingVideo.title_de" type="text"
-                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
-                                        placeholder="e.g. Sales Mistakes #1">
+                                    <label class="block text-sm font-medium text-gray-700">German Title (Original)</label>
+                                    <input v-model="editingVideo.title_de" type="text" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="e.g. Sales Mistakes #1">
                                 </div>
-
                                 <!-- Status -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Status</label>
-                                    <select v-model="editingVideo.status"
-                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <option v-for="status in statuses" :value="status">{{ status }}</option>
+                                    <select v-model="editingVideo.status" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
                                     </select>
                                 </div>
-
                                 <!-- Idea/Notes -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Ideas / Notes</label>
-                                    <textarea v-model="editingVideo.ideas" rows="3"
-                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
+                                    <textarea v-model="editingVideo.ideas" rows="3" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
                                 </div>
-
                                 <!-- Script (Text DE) -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Script (German)</label>
-                                    <textarea v-model="editingVideo.text_de" rows="5"
-                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
-                                        placeholder="Enter the full script here..."></textarea>
+                                    <textarea v-model="editingVideo.text_de" rows="5" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="Enter the full script here..."></textarea>
                                 </div>
-
-                                <!-- Director Notes (Only visible if Director or later) -->
+                                <!-- Director Notes -->
                                 <div v-if="currentRole === 'Director' || currentRole === 'All'">
-                                    <label class="block text-sm font-medium text-gray-700 text-yellow-700">Director
-                                        Notes</label>
-                                    <input v-model="editingVideo.director_notes" type="text"
-                                        class="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-yellow-300 rounded-md p-2 border bg-yellow-50">
+                                    <label class="block text-sm font-medium text-gray-700 text-yellow-700">Director Notes</label>
+                                    <input v-model="editingVideo.director_notes" type="text" class="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-yellow-300 rounded-md p-2 border bg-yellow-50">
                                 </div>
-
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- Buttons -->
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="saveVideo" type="button"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button @click="saveVideo" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
                         {{ saving ? 'Saving...' : 'Save' }}
                     </button>
-                    <button @click="closeModal" type="button"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                         Cancel
                     </button>
                 </div>
