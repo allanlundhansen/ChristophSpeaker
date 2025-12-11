@@ -475,7 +475,7 @@
                                 <!-- Title -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">German Title (Original)</label>
-                                    <input v-model="editingVideo.title_de" type="text" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="e.g. Sales Mistakes #1">
+                                    <input v-model="editingVideo.title_de" @input="debouncedTranslate('title_de', editingVideo.title_de)" type="text" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="e.g. Sales Mistakes #1">
                                 </div>
                                 <!-- Status -->
                                 <div>
@@ -492,7 +492,7 @@
                                 <!-- Script (Text DE) -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Script (German)</label>
-                                    <textarea v-model="editingVideo.text_de" rows="5" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="Enter the full script here..."></textarea>
+                                    <textarea v-model="editingVideo.text_de" @input="debouncedTranslate('text_de', editingVideo.text_de)" rows="5" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" placeholder="Enter the full script here..."></textarea>
                                 </div>
                                 <!-- Director Notes -->
                                 <div v-if="currentRole === 'Director' || currentRole === 'All'">

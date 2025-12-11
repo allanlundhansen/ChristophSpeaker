@@ -173,6 +173,24 @@ function saveVideo(data) {
     rowIndex = firstEmpty;
   }
 
+  // AUTO-TRANSLATION FALLBACK
+  // If English fields are empty but German fields exist, translate them now.
+  // This handles race conditions where user saves before frontend translation completes.
+  if (!data.title_en && data.title_de) {
+    try {
+      data.title_en = LanguageApp.translate(data.title_de, "de", "en");
+    } catch (e) {
+      data.title_en = ""; // Fail silently
+    }
+  }
+  if (!data.text_en && data.text_de) {
+    try {
+      data.text_en = LanguageApp.translate(data.text_de, "de", "en");
+    } catch (e) {
+      data.text_en = "";
+    }
+  }
+
   // Map data to full row (18 columns)
   // Col order: ID, Title_DE, Text_DE, Title_EN, Text_EN, Ideas, ...
   const rowData = [
