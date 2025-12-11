@@ -20,21 +20,20 @@
             filteredVideos() {
                 let filtered = this.videos;
 
+                // 1. Filter by Role
                 if (this.currentRole !== 'All') {
-                    if (this.currentRole === 'Author') {
-                        filtered = filtered.filter(v => v.status === 'draft');
-                    } else if (this.currentRole === 'Director') {
-                        filtered = filtered.filter(v => ['recording_ready', 'recording'].includes(v.status));
-                    } else if (this.currentRole === 'Speaker') {
-                        filtered = filtered.filter(v => v.status === 'recording');
-                    } else if (this.currentRole === 'Editor') {
-                        filtered = filtered.filter(v => v.status === 'edit_ready');
-                    } else if (this.currentRole === 'Manager') {
-                        filtered = filtered.filter(v => ['publish_ready', 'published'].includes(v.status));
-                    }
+                    let roleStatuses = [];
+                    if (this.currentRole === 'Author') roleStatuses = ['draft'];
+                    else if (this.currentRole === 'Director') roleStatuses = ['recording_ready', 'recording'];
+                    else if (this.currentRole === 'Speaker') roleStatuses = ['recording'];
+                    else if (this.currentRole === 'Editor') roleStatuses = ['edit_ready'];
+                    else if (this.currentRole === 'Manager') roleStatuses = ['publish_ready', 'published'];
+                    
+                    filtered = filtered.filter(v => roleStatuses.includes(v.status));
                 }
 
-                if (this.currentRole === 'All' && this.filterStatus !== 'All') {
+                // 2. Filter by View/Status
+                if (this.filterStatus !== 'All') {
                     filtered = filtered.filter(v => v.status === this.filterStatus);
                 }
 

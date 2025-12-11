@@ -33,8 +33,8 @@
                                         <option value="Manager">Manager</option>
                                     </select>
                                 </div>
-                                <!-- Dropdown Filter (Only if Role is All) -->
-                                <div v-if="currentRole === 'All'" class="flex items-center space-x-2 ml-4">
+                                <!-- Dropdown Filter (Visible for all roles) -->
+                                <div class="flex items-center space-x-2 ml-4">
                                     <span class="text-sm text-gray-500">Filter:</span>
                                     <select v-model="filterStatus" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                         <option value="All">All Views</option> 
@@ -455,6 +455,8 @@
                 </aside>
 
                 <!-- Buttons removed: consolidated in Header -->
+             </main>
+        </div>
 
     <!-- Modal: Edit/Create Video -->
     <div v-if="viewMode === 'edit'" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -511,8 +513,8 @@
                     </button>
                 </div>
             </div>
+            </div>
         </div>
-    </div>
     </div> <!-- Close #app -->
     <?!= include('javascript'); ?>
 </body>
