@@ -1,0 +1,57 @@
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <div class="flex-shrink-0 flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">YSMS</h1>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <!-- Role Switcher -->
+                    <div class="flex items-center space-x-2 ml-4">
+                        <span class="text-sm text-gray-500">View As:</span>
+                        <select v-model="currentRole" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="All">All Roles</option>
+                            <option value="Author">Author</option>
+                            <option value="Director">Director</option>
+                            <option value="Speaker">Speaker</option>
+                            <option value="Editor">Editor</option>
+                            <option value="Manager">Manager</option>
+                        </select>
+                    </div>
+                    <!-- Dropdown Filter (Visible for all roles) -->
+                    <div class="flex items-center space-x-2 ml-4">
+                        <span class="text-sm text-gray-500">Filter:</span>
+                        <select v-model="filterStatus" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="All">All Views</option> 
+                            <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <button @click="openNewVideoModal" type="button"
+                    class="relative inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    New Video
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Navbar (Filters & Layout) -->
+    <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center h-12">
+            <div class="text-xs text-gray-500">
+            Showing {{ filteredVideos.length }} videos
+            </div>
+            <div class="flex items-center space-x-2">
+            <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </button>
+            <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            </div>
+    </div>
+</nav>
