@@ -3,9 +3,22 @@
 
 <head>
     <base target="_top">
-    <?!= include('stylesheet'); ?>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
+<style>
+    /* Teleprompter Dynamic Spacing */
+    /* This rule must be global to catch elements created by v-html */
+    #prompter-text p { 
+        margin-bottom: var(--para-spacing, 50px) !important; 
+    }
+    #prompter-text br {
+        display: block;
+        margin-bottom: 0.5em; 
+        content: "";
+    }
+</style>
 
 <body>
     <div id="app" class="min-h-screen flex flex-col" v-cloak>
@@ -13,6 +26,7 @@
         <!-- Components -->
         <?!= include('components/Dashboard'); ?>
         <?!= include('components/DetailedView'); ?>
+        <?!= include('components/TeleprompterView'); ?>
         <?!= include('components/Modal'); ?>
 
     </div> <!-- Close #app -->

@@ -14,7 +14,16 @@
             loading: true,
             videos: [],
             error: null,
-            filterStatus: 'All'
+            filterStatus: 'All',
+            prompter: {
+                isScrolling: false,
+                speed: 2,
+                fontSize: 60,
+                paragraphSpacing: 50, // Default pixels
+                mirror: false,
+                showGuides: true,
+                scrollIds: null
+            }
         },
         computed: {
             filteredVideos() {
@@ -118,6 +127,8 @@
                     .getVideos();
             },
             onVideosLoaded(data) {
+                // Ignore background polls if we are in the middle of a user action/save
+                if (this.saving) return;
                 this.videos = data;
                 this.loading = false;
             },
@@ -134,6 +145,12 @@
                 this.viewMode = 'edit';
             },
             openDetailView(video) {
+                // SMART CLICK: If Speaker + Recording -> Open Teleprompter directly
+                if (this.currentRole === 'Speaker' && video.status === 'recording') {
+                    this.openTeleprompter(video);
+                    return;
+                }
+
                 this.editingVideo = JSON.parse(JSON.stringify(video));
                 this.tagInput = '';
                 this.sourceInput = '';
@@ -288,6 +305,121 @@
             },
             openLink(url) {
                 window.open(url, '_blank');
+            },
+            // DIRECTOR: Set active recording
+            setRecordingStatus(video) {
+                // LOCK Polling to prevent race condition
+                this.saving = true; 
+
+                // 1. Optimistic UI Update
+                const targetId = video.id;
+                this.videos.forEach(v => {
+                    if (v.id === targetId) {
+                        v.status = 'recording';
+                    } else if (v.status === 'recording') {
+                        v.status = 'recording_ready';
+                    }
+                });
+
+                // 2. Sync Detail View if open and matching
+                if (this.editingVideo && this.editingVideo.id === targetId) {
+                    this.editingVideo.status = 'recording';
+                    // If other video was open? Unlikely edge case, not handled here.
+                }
+
+                // 3. Server Call
+                google.script.run
+                    .withSuccessHandler(() => {
+                        console.log("Recording status synced.");
+                        this.saving = false; // Release lock
+                        this.fetchVideos(true); // Fetch immediately to confirm server state
+                    })
+                    .withFailureHandler((err) => {
+                        alert("Failed to set recording status: " + err);
+                        this.saving = false; // Release lock
+                        this.fetchVideos(); // Revert on error
+                    })
+                    .setAsActiveRecording(targetId);
+            },
+            // TELEPROMPTER LOGIC
+            openTeleprompter(video) {
+                this.editingVideo = JSON.parse(JSON.stringify(video));
+                // Default settings if not set?
+                this.prompter.isScrolling = false;
+                this.viewMode = 'teleprompter';
+            },
+            closeTeleprompter() {
+                this.stopScrolling();
+                this.viewMode = 'dashboard';
+                this.editingVideo = {};
+            },
+            toggleScrolling() {
+                if (this.prompter.isScrolling) {
+                    this.stopScrolling();
+                } else {
+                    this.startScrolling();
+                }
+            },
+            startScrolling() {
+                if (this.prompter.isScrolling) return;
+                this.prompter.isScrolling = true;
+                
+                const container = document.getElementById('prompter-content');
+                if (!container) return; // Safety
+
+                // SUB-PIXEL SCROLLING FIX:
+                // Browsers often truncate scrollTop assignments. We must track the precise float value.
+                let preciseScrollTop = container.scrollTop;
+
+                const scrollStep = () => {
+                    if (!this.prompter.isScrolling) return;
+                    
+                    // Logic: Speed 1 = 0.1px/frame, Speed 100 = 10px/frame
+                    // Speed 4 = 0.4px/frame (accumulates to 2px every 5 frames)
+                    const pixels = this.prompter.speed * 0.1;
+                    preciseScrollTop += pixels;
+                    container.scrollTop = preciseScrollTop;
+
+                    // Loop
+                    this.prompter.scrollIds = requestAnimationFrame(scrollStep);
+                };
+                this.prompter.scrollIds = requestAnimationFrame(scrollStep);
+            },
+            stopScrolling() {
+                this.prompter.isScrolling = false;
+                if (this.prompter.scrollIds) cancelAnimationFrame(this.prompter.scrollIds);
+            },
+            markAsRecorded() {
+                if(!confirm("Finish recording and send to Editor?")) return;
+                
+                this.stopScrolling();
+                this.saving = true;
+                this.$set(this.editingVideo, 'status', 'edit_ready'); // Optimistic
+
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.saving = false;
+                        this.closeTeleprompter();
+                        this.fetchVideos(true);
+                    })
+                    .withFailureHandler((err) => {
+                        alert("Error: " + err);
+                        this.saving = false;
+                    })
+                    .saveVideo(this.editingVideo);
+            },
+            // UTILS
+            renderMarkdown(text) {
+                if (!text) return '';
+                
+                // FORCE PARAGRAPHS: Turn single Sheet newlines into Markdown double-newlines
+                // This ensures every line in the Sheet becomes a distinct paragraph
+                // which can then be spaced by the slider.
+                const formatted = text.replace(/\n/g, '\n\n');
+                
+                // Configure marked to break on single newlines if desired, or standard markdown
+                // marked.setOptions({ breaks: true }); 
+                return marked.parse(formatted);
             }
         }
     });

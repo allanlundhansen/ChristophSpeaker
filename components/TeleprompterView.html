@@ -1,0 +1,87 @@
+<div v-if="viewMode === 'teleprompter'" class="fixed inset-0 bg-black z-50 flex flex-col h-screen w-screen overflow-hidden text-white font-sans">
+    
+    <!-- Controls Interface (Top Bar - Auto-hides usually, but kept simple for now) -->
+    <div class="flex-none bg-gray-900 border-b border-gray-800 p-4 flex items-center justify-between z-50 opacity-100 hover:opacity-100 transition-opacity">
+        <div class="flex items-center space-x-4">
+            <button @click="closeTeleprompter" class="text-gray-400 hover:text-white flex items-center">
+                <svg class="w-6 h-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                Exit
+            </button>
+            <div class="h-6 w-px bg-gray-700"></div>
+            
+            <!-- Font Size -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-500 uppercase font-bold">Size</span>
+                <input type="range" min="20" max="100" v-model="prompter.fontSize" class="w-24">
+            </div>
+
+            <!-- Spacing -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-500 uppercase font-bold">Space</span>
+                <input type="range" min="20" max="200" v-model="prompter.paragraphSpacing" class="w-24">
+            </div>
+
+            <!-- Scroll Speed -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-500 uppercase font-bold">Speed</span>
+                <input type="range" min="0" max="100" step="1" v-model="prompter.speed" class="w-24">
+                <span class="text-xs font-mono w-6">{{ prompter.speed }}</span>
+            </div>
+        </div>
+
+        <!-- Play/Pause & Mirror & Guides -->
+        <div class="flex items-center space-x-6">
+            <!-- Guides Toggle -->
+            <button @click="prompter.showGuides = !prompter.showGuides" :class="prompter.showGuides ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
+                <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 12l4-4m-4 4l4 4" /></svg> <!-- Simple line icon -->
+                <span class="text-[10px] font-bold uppercase group-hover:text-white">Guides</span>
+            </button>
+
+            <button @click="prompter.mirror = !prompter.mirror" :class="prompter.mirror ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
+                <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="text-[10px] font-bold uppercase group-hover:text-white">Mirror</span>
+            </button>
+
+            <!-- Big Play Button -->
+            <button @click="toggleScrolling" class="bg-indigo-600 hover:bg-indigo-500 rounded-full p-3 shadow-lg transform transition hover:scale-105 active:scale-95">
+                <svg v-if="prompter.isScrolling" class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                <svg v-else class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+
+        <!-- Finish Action -->
+        <button @click="markAsRecorded" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded font-bold text-sm shadow-sm flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            Mark Recorded
+        </button>
+    </div>
+
+    <!-- Teleprompter Area -->
+    <div id="prompter-container" class="flex-grow relative overflow-hidden bg-black flex justify-center">
+        <!-- Guidelines (Central Marker) -->
+        <div v-if="prompter.showGuides">
+            <div class="absolute top-1/2 left-0 right-0 border-t border-red-500/30 z-10 pointer-events-none"></div>
+            <div class="absolute top-1/2 left-4 w-4 h-4 border-t-2 border-l-2 border-red-500/50 -mt-2 pointer-events-none"></div>
+            <div class="absolute top-1/2 right-4 w-4 h-4 border-t-2 border-r-2 border-red-500/50 -mt-2 pointer-events-none"></div>
+        </div>
+
+        <!-- Text Flow -->
+        <div id="prompter-content" 
+             class="h-full w-full max-w-3xl px-8 overflow-y-auto no-scrollbar scroll-smooth relative"
+             :style="{ transform: prompter.mirror ? 'scaleX(-1)' : 'none' }">
+             
+             <!-- Padding for start/end -->
+             <div style="height: 50vh;"></div>
+             
+             <!-- Markdown Content -->
+             <!-- Dynamic Paragraph Spacing via CSS Variable -->
+             <div id="prompter-text"
+                  :style="{ fontSize: prompter.fontSize + 'px', lineHeight: '1.4', '--para-spacing': prompter.paragraphSpacing + 'px' }" 
+                  class="text-center font-bold pb-12 [&>h1]:text-red-500 [&>h1]:mb-8 [&>h2]:mb-6 [&>strong]:text-yellow-400"
+                  v-html="renderMarkdown(editingVideo.text_de)">
+             </div>
+             
+             <div style="height: 50vh;"></div>
+        </div>
+    </div>
+</div>

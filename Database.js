@@ -190,3 +190,44 @@ function deleteVideo(id) {
   }
   return false;
 }
+
+/**
+ * API: Set a single video as 'recording'
+ * Enforces that only ONE video can be 'recording' at a time.
+ * Demotes any other 'recording' videos to 'recording_ready'.
+ */
+function setAsActiveRecording(targetId) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  
+  // Column Indexes (0-based)
+  // ID is Col 0 (A)
+  // Status is Col 16 (Q)
+  const ID_COL = 0;
+  const STATUS_COL = 16;
+  
+  // We need to write updates. To be efficient, we can collect them.
+  // Or just write directly as we iterate since volume is low.
+  
+  let targetFound = false;
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = data[i][ID_COL];
+    const currentStatus = data[i][STATUS_COL];
+    const rowIndex = i + 1; // 1-based index for Sheet API
+
+    if (rowId == targetId) {
+       // Promote to recording
+       if (currentStatus !== 'recording') {
+         sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording');
+       }
+       targetFound = true;
+    } else if (currentStatus === 'recording') {
+       // Demote others to recording_ready
+       sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording_ready');
+    }
+  }
+  
+  SpreadsheetApp.flush(); // Force write to ensure subsequent reads are fresh
+  return targetFound;
+}
