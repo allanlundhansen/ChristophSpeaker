@@ -38,11 +38,13 @@
                 <button @click="switchLanguage('en')" :class="prompter.activeLanguage === 'en' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'" class="px-2 py-1 text-xs font-bold rounded">EN</button>
             </div>
 
-            <!-- Full Screen -->
+            <!-- Full Screen (Disabled for now) -->
+            <!--
             <button @click="toggleFullScreen" :class="prompter.isFullscreen ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
                  <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                  <span class="text-[10px] font-bold uppercase group-hover:text-white">Full</span>
             </button>
+            -->
 
             <!-- Guides Toggle -->
             <button @click="prompter.showGuides = !prompter.showGuides" :class="prompter.showGuides ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
@@ -80,7 +82,13 @@
 
         <!-- Text Flow -->
         <div id="prompter-content" 
-             class="h-full w-full max-w-3xl px-8 overflow-y-auto no-scrollbar scroll-smooth relative"
+             class="h-full w-full px-8 overflow-y-auto no-scrollbar relative"
+             @mousedown="handleInteractionStart"
+             @mouseup="handleInteractionEnd"
+             @mouseleave="handleInteractionEnd"
+             @touchstart="handleInteractionStart"
+             @touchend="handleInteractionEnd"
+             @wheel="handleWheel"
              :style="{ transform: prompter.mirror ? 'scaleX(-1)' : 'none' }">
              
              <!-- Padding for start/end -->

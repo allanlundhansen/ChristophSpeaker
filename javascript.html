@@ -352,9 +352,24 @@
                 this.prompter.isScrolling = false;
                 this.prompter.activeLanguage = 'de'; // Default
                 this.prompter.isFullscreen = false;
+                this.prompter.isInteracting = false; // Track manual scroll
 
                 // Load Settings for Default Language
                 this.loadPrompterSettings();
+            },
+            handleInteractionStart() {
+                this.prompter.isInteracting = true;
+            },
+            handleInteractionEnd() {
+                this.prompter.isInteracting = false;
+            },
+            handleWheel() {
+                // Wheel doesn't have a clear "end", so we debounce it
+                this.prompter.isInteracting = true;
+                if (this.wheelTimer) clearTimeout(this.wheelTimer);
+                this.wheelTimer = setTimeout(() => {
+                    this.prompter.isInteracting = false;
+                }, 150);
             },
             closeTeleprompter() {
                 this.stopScrolling();
@@ -448,8 +463,23 @@
                 const scrollStep = () => {
                     if (!this.prompter.isScrolling) return;
                     
-                    // Logic: Speed 1 = 0.1px/frame, Speed 100 = 10px/frame
-                    // Speed 4 = 0.4px/frame (accumulates to 2px every 5 frames)
+                    // INTERACTION CHECK:
+                    // If user is holding mouse or touching, strictly sync tracker and SKIP increment.
+                    // This prevents "fighting" the user's manual scroll.
+                    if (this.prompter.isInteracting) {
+                        preciseScrollTop = container.scrollTop;
+                        this.prompter.scrollIds = requestAnimationFrame(scrollStep);
+                        return; 
+                    }
+
+                    // MANUAL SCROLL RESUME (Failsafe):
+                    // If we are NOT determining interaction but the position jumped significantly
+                    // (e.g. momentum scroll or wheel without event), sync to it.
+                    if (Math.abs(container.scrollTop - preciseScrollTop) > 5.0) {
+                        preciseScrollTop = container.scrollTop;
+                    }
+                    
+                    // Apply Increment
                     const pixels = this.prompter.speed * 0.1;
                     preciseScrollTop += pixels;
                     container.scrollTop = preciseScrollTop;
