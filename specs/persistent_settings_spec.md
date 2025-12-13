@@ -14,7 +14,11 @@ The Speaker needs to be able to read scripts in either German (Original) or Engl
   - `EN`: Displays `Title_EN` and `Text_EN`.
 - **Default**: Opens in `DE` by default, or remembers last choice? (Assumption: Default to DE for now).
 
-### 2.2. Persistent Settings
+### 2.2. Text Alignment
+
+- **Style**: Text should be **Left Aligned** (keep the container centered on screen, but align text to the left) to improve readability compared to centered text.
+
+### 2.3. Persistent Settings
 
 - **Storage**: Settings must be saved to the database (Google Sheet) so they persist across sessions/reloads.
 - **Granularity**: Settings are per-row (Video) AND per-language.
@@ -63,6 +67,7 @@ To avoid clogging the sheet with 4 new columns, we will store a **JSON String** 
   - When Sliders move -> Update `prompter.settings` and trigger a **Debounced Save**.
 - **UI**:
   - Add a Toggle Switch (DE/EN) to the control bar.
+  - Add a Full Screen Button (Toggle) to maximize the teleprompter view.
   - Update `v-html` content binding to shown the active language text.
 
 ## 4. Migration
