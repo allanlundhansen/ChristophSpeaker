@@ -63,34 +63,42 @@ function getVideos() {
   }
 
   // Column Mappings (0-indexed based on Plan):
-  // 0:ID, 1:Title_DE, 2:Text_DE, 3:Title_EN, 4:Text_EN, 5:Ideas, 6:Tags
-  // 7:Ref_Image, 8:Source_Link, ... 16:Status, 17:Date
+  // 0:ID ... 17:Date, 18:Prompter_Settings (JSON)
 
   // Filter out rows where ID (Index 0) is empty or whitespace
   const validData = data.filter((row) => row[0].toString().trim() !== "");
   console.log("Found " + validData.length + " valid videos.");
 
   return validData
-    .map((row) => ({
-      id: row[0],
-      title_de: row[1],
-      text_de: row[2],
-      title_en: row[3],
-      text_en: row[4],
-      ideas: row[5],
-      tags: row[6],
-      ref_image: row[7],
-      source_link: row[8],
-      director_notes: row[9],
-      editor_instructions: row[10],
-      raw_footage_url: row[11],
-      final_video_url: row[12],
-      link_youtube: row[13],
-      link_instagram: row[14],
-      link_tiktok: row[15],
-      status: row[16],
-      date: row[17] ? new Date(row[17]).toLocaleDateString() : "",
-    }))
+    .map((row) => {
+      let settings = {};
+      try {
+        settings = row[18] ? JSON.parse(row[18]) : {};
+      } catch (e) {
+        console.warn("Failed to parse settings for row", row[0], e);
+      }
+      return {
+        id: row[0],
+        title_de: row[1],
+        text_de: row[2],
+        title_en: row[3],
+        text_en: row[4],
+        ideas: row[5],
+        tags: row[6],
+        ref_image: row[7],
+        source_link: row[8],
+        director_notes: row[9],
+        editor_instructions: row[10],
+        raw_footage_url: row[11],
+        final_video_url: row[12],
+        link_youtube: row[13],
+        link_instagram: row[14],
+        link_tiktok: row[15],
+        status: row[16],
+        date: row[17] ? new Date(row[17]).toLocaleDateString() : "",
+        prompter_settings: settings
+      };
+    })
     .reverse(); // Show newest first
 }
 
@@ -131,8 +139,7 @@ function saveVideo(data) {
   }
 
   // AUTO-TRANSLATION FALLBACK
-  // If English fields are empty but German fields exist, translate them now.
-  // This handles race conditions where user saves before frontend translation completes.
+  // ... (Identical to before)
   if (!data.title_en && data.title_de) {
     try {
       data.title_en = LanguageApp.translate(data.title_de, "de", "en");
@@ -148,13 +155,12 @@ function saveVideo(data) {
     }
   }
 
-  // Map data to full row (18 columns)
-  // Col order: ID, Title_DE, Text_DE, Title_EN, Text_EN, Ideas, ...
+  // Map data to full row (19 columns)
   const rowData = [
     data.id,
     data.title_de || "",
     data.text_de || "",
-    data.title_en || "", // Now saving English values directly
+    data.title_en || "", 
     data.text_en || "",
     data.ideas || "",
     data.tags || "",
@@ -169,10 +175,11 @@ function saveVideo(data) {
     data.link_tiktok || "",
     data.status || "draft",
     data.date || new Date(),
+    data.prompter_settings ? JSON.stringify(data.prompter_settings) : "" // Col 19: JSON Settings
   ];
 
   // Write the full row at once
-  sheet.getRange(rowIndex, 1, 1, 18).setValues([rowData]);
+  sheet.getRange(rowIndex, 1, 1, 19).setValues([rowData]);
   return true;
 }
 

@@ -12,28 +12,41 @@
             <!-- Font Size -->
             <div class="flex items-center space-x-2">
                 <span class="text-xs text-gray-500 uppercase font-bold">Size</span>
-                <input type="range" min="20" max="100" v-model="prompter.fontSize" class="w-24">
+                <input type="range" min="20" max="100" v-model="prompter.fontSize" @input="updateSettingsObject" class="w-24">
             </div>
 
             <!-- Spacing -->
             <div class="flex items-center space-x-2">
                 <span class="text-xs text-gray-500 uppercase font-bold">Space</span>
-                <input type="range" min="20" max="200" v-model="prompter.paragraphSpacing" class="w-24">
+                <input type="range" min="20" max="200" v-model="prompter.paragraphSpacing" @input="updateSettingsObject" class="w-24">
             </div>
 
             <!-- Scroll Speed -->
             <div class="flex items-center space-x-2">
                 <span class="text-xs text-gray-500 uppercase font-bold">Speed</span>
-                <input type="range" min="0" max="100" step="1" v-model="prompter.speed" class="w-24">
+                <input type="range" min="0" max="100" step="1" v-model="prompter.speed" @input="updateSettingsObject" class="w-24">
                 <span class="text-xs font-mono w-6">{{ prompter.speed }}</span>
             </div>
         </div>
 
-        <!-- Play/Pause & Mirror & Guides -->
+        <!-- Play/Pause & Mirror & Guides & Lang & FullScreen -->
         <div class="flex items-center space-x-6">
+            
+            <!-- Language Toggle -->
+            <div class="flex items-center bg-gray-800 rounded-lg p-1">
+                <button @click="switchLanguage('de')" :class="prompter.activeLanguage === 'de' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'" class="px-2 py-1 text-xs font-bold rounded">DE</button>
+                <button @click="switchLanguage('en')" :class="prompter.activeLanguage === 'en' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'" class="px-2 py-1 text-xs font-bold rounded">EN</button>
+            </div>
+
+            <!-- Full Screen -->
+            <button @click="toggleFullScreen" :class="prompter.isFullscreen ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
+                 <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                 <span class="text-[10px] font-bold uppercase group-hover:text-white">Full</span>
+            </button>
+
             <!-- Guides Toggle -->
             <button @click="prompter.showGuides = !prompter.showGuides" :class="prompter.showGuides ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
-                <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 12l4-4m-4 4l4 4" /></svg> <!-- Simple line icon -->
+                <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 12l4-4m-4 4l4 4" /></svg>
                 <span class="text-[10px] font-bold uppercase group-hover:text-white">Guides</span>
             </button>
 
@@ -77,8 +90,8 @@
              <!-- Dynamic Paragraph Spacing via CSS Variable -->
              <div id="prompter-text"
                   :style="{ fontSize: prompter.fontSize + 'px', lineHeight: '1.4', '--para-spacing': prompter.paragraphSpacing + 'px' }" 
-                  class="text-center font-bold pb-12 [&>h1]:text-red-500 [&>h1]:mb-8 [&>h2]:mb-6 [&>strong]:text-yellow-400"
-                  v-html="renderMarkdown(editingVideo.text_de)">
+                  class="text-left font-bold pb-12 mx-auto [&>h1]:text-red-500 [&>h1]:mb-8 [&>h2]:mb-6 [&>strong]:text-yellow-400"
+                  v-html="renderMarkdown(prompter.activeLanguage === 'de' ? editingVideo.text_de : editingVideo.text_en)">
              </div>
              
              <div style="height: 50vh;"></div>

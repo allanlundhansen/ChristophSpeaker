@@ -14,11 +14,17 @@ The Speaker needs to be able to read scripts in either German (Original) or Engl
   - `EN`: Displays `Title_EN` and `Text_EN`.
 - **Default**: Opens in `DE` by default, or remembers last choice? (Assumption: Default to DE for now).
 
-### 2.2. Text Alignment
+### 2.2. Text Alignment & Layout
 
-- **Style**: Text should be **Left Aligned** (keep the container centered on screen, but align text to the left) to improve readability compared to centered text.
+- **Alignment**: Text should be **Left Aligned** for readability.
+- **Width**: Text container should fill the **Entire Width** of the window (remove max-width constraints) to maximize screen real estate, especially in Full Screen mode.
 
-### 2.3. Persistent Settings
+### 2.3. Scrolling Behavior
+
+- **Manual Override**: The user must be able to **manually scroll** the text (swipe/wheel) even while auto-scrolling is active.
+- **Resume**: After the user stops manually scrolling, the auto-scroll should **continue from the new position** immediately (no need to pause/unpause).
+
+### 2.4. Persistent Settings
 
 - **Storage**: Settings must be saved to the database (Google Sheet) so they persist across sessions/reloads.
 - **Granularity**: Settings are per-row (Video) AND per-language.

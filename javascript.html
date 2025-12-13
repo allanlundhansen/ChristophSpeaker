@@ -22,6 +22,8 @@
                 paragraphSpacing: 50, // Default pixels
                 mirror: false,
                 showGuides: true,
+                activeLanguage: 'de',
+                isFullscreen: false,
                 scrollIds: null
             }
         },
@@ -344,14 +346,86 @@
             // TELEPROMPTER LOGIC
             openTeleprompter(video) {
                 this.editingVideo = JSON.parse(JSON.stringify(video));
-                // Default settings if not set?
-                this.prompter.isScrolling = false;
                 this.viewMode = 'teleprompter';
+                
+                // Initialize Prompter State
+                this.prompter.isScrolling = false;
+                this.prompter.activeLanguage = 'de'; // Default
+                this.prompter.isFullscreen = false;
+
+                // Load Settings for Default Language
+                this.loadPrompterSettings();
             },
             closeTeleprompter() {
                 this.stopScrolling();
+                if (document.fullscreenElement) document.exitFullscreen().catch(e => {});
                 this.viewMode = 'dashboard';
                 this.editingVideo = {};
+            },
+            loadPrompterSettings() {
+                const settings = this.editingVideo.prompter_settings || {};
+                const lang = this.prompter.activeLanguage;
+                const langSettings = settings[lang] || {};
+
+                // Apply to Runtime State (Fallbacks to Defaults)
+                this.prompter.fontSize = langSettings.fontSize || 60;
+                this.prompter.paragraphSpacing = langSettings.paragraphSpacing || 50;
+                this.prompter.speed = (langSettings.speed !== undefined) ? langSettings.speed : 25;
+            },
+            switchLanguage(lang) {
+                if (this.prompter.activeLanguage === lang) return;
+                
+                // 1. Save current settings before switching? 
+                // Actually, the sliders update 'prompter' directly, so we just need to ensure
+                // we've captured the latest values into the object before switching.
+                this.updateSettingsObject(); 
+
+                // 2. Switch Language
+                this.prompter.activeLanguage = lang;
+                
+                // 3. Load new settings
+                this.loadPrompterSettings();
+            },
+            updateSettingsObject() {
+                // Syncs current UI sliders back to the JSON structure
+                if (!this.editingVideo.prompter_settings) this.$set(this.editingVideo, 'prompter_settings', {});
+                
+                const lang = this.prompter.activeLanguage;
+                if (!this.editingVideo.prompter_settings[lang]) this.editingVideo.prompter_settings[lang] = {};
+
+                const target = this.editingVideo.prompter_settings[lang];
+                target.fontSize = this.prompter.fontSize;
+                target.paragraphSpacing = this.prompter.paragraphSpacing;
+                target.speed = this.prompter.speed;
+                
+                // Trigger Save
+                this.debouncedSaveSettings();
+            },
+            debouncedSaveSettings() {
+               if (this.debounceTimer) clearTimeout(this.debounceTimer);
+               this.debounceTimer = setTimeout(() => {
+                   this.savePrompterSettings();
+               }, 1000); // 1-second auto-save
+            },
+            savePrompterSettings() {
+                // Silent Save
+                google.script.run
+                    .withFailureHandler(err => console.error("Settings Auto-Save Failed", err))
+                    .saveVideo(this.editingVideo);
+            },
+            toggleFullScreen() {
+                const elem = document.documentElement;
+                if (!document.fullscreenElement) {
+                    elem.requestFullscreen().then(() => {
+                        this.prompter.isFullscreen = true;
+                    }).catch(err => {
+                        alert(`Error attempting to enable full-screen mode: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen().then(() => {
+                        this.prompter.isFullscreen = false;
+                    });
+                }
             },
             toggleScrolling() {
                 if (this.prompter.isScrolling) {
