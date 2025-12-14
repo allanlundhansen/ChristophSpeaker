@@ -97,8 +97,9 @@
              <!-- Markdown Content -->
              <!-- Dynamic Paragraph Spacing via CSS Variable -->
              <div id="prompter-text"
+                  :key="prompter.updateKey"
                   :style="{ fontSize: prompter.fontSize + 'px', lineHeight: '1.4', '--para-spacing': prompter.paragraphSpacing + 'px' }" 
-                  class="text-left font-bold pb-12 mx-auto [&>h1]:text-red-500 [&>h1]:mb-8 [&>h2]:mb-6 [&>strong]:text-yellow-400"
+                  class="text-left pb-12 mx-auto [&>h1]:text-red-500 [&>h1]:mb-8 [&>h2]:mb-6 [&>strong]:text-yellow-400"
                   v-html="renderMarkdown(prompter.activeLanguage === 'de' ? editingVideo.text_de : editingVideo.text_en)">
              </div>
              

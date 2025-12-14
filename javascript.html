@@ -26,6 +26,7 @@
                 isFullscreen: false,
                 isInteracting: false, // Track manual scroll
                 globalSettings: {}, // Store loaded global config
+                updateKey: 0, // Force re-render key
                 scrollIds: null
             }
         },
@@ -117,10 +118,12 @@
             this.fetchVideos();
 
             setInterval(() => {
-                if (!this.saving && this.viewMode === 'dashboard') {
+                // Poll if in Dashboard OR Teleprompter (for auto-switch)
+                // But NOT if we are actively saving (this.saving)
+                if (!this.saving && (this.viewMode === 'dashboard' || this.viewMode === 'teleprompter')) {
                     this.fetchVideos(true);
                 }
-            }, 1000);
+            }, 4000); // Increased to 4s to avoid "Too many scripts" quota error
         },
         methods: {
             fetchVideos(silent = false) {
@@ -131,11 +134,45 @@
                     .getVideos();
             },
             onVideosLoaded(data) {
-                // Ignore background polls if we are in the middle of a user action/save
+                console.log("Videos loaded:", data.length);
+                if (this.viewMode === 'teleprompter') {
+                    // Force Teleprompter Sync even if saving (background poll is essential for live updates)
+                    const activeVideo = data.find(v => v.status === 'recording');
+                    console.log("Teleprompter Sync Check. Active ID:", activeVideo ? activeVideo.id : 'None');
+                    
+                    if (activeVideo) {
+                        // Scenario 1: Active Video Changed
+                        if (activeVideo.id !== this.editingVideo.id) {
+                            console.log("Auto-switching ID from", this.editingVideo.id, "to", activeVideo.id);
+                            this.openTeleprompter(activeVideo);
+                        } 
+                        // Scenario 2: Same Video, Content Changed
+                        else {
+                            const fields = ['text_de', 'text_en', 'title_de', 'title_en'];
+                            let updated = false;
+                            
+                            fields.forEach(field => {
+                                if (this.editingVideo[field] !== activeVideo[field]) {
+                                    console.log(`Field ${field} changed.`);
+                                    this.$set(this.editingVideo, field, activeVideo[field]);
+                                    updated = true;
+                                }
+                            });
+                            
+                            if (updated) {
+                                console.log("Live Content Sync: FORCING RERENDER");
+                                this.prompter.updateKey++; 
+                            }
+                        }
+                    }
+                }
+
+                // Standard Dashboard Update (Respect saving lock to avoid flicker)
                 if (this.saving) return;
                 this.videos = data;
                 this.loading = false;
             },
+
             onFailure(error) {
                 this.error = "Error loading videos: " + error.message;
                 this.loading = false;
