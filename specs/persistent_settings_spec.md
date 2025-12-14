@@ -24,50 +24,36 @@ The Speaker needs to be able to read scripts in either German (Original) or Engl
 - **Manual Override**: The user must be able to **manually scroll** the text (swipe/wheel) even while auto-scrolling is active.
 - **Resume**: After the user stops manually scrolling, the auto-scroll should **continue from the new position** immediately (no need to pause/unpause).
 
-### 2.4. Persistent Settings
+### 2.4. Persistent Settings (Global)
 
-- **Storage**: Settings must be saved to the database (Google Sheet) so they persist across sessions/reloads.
-- **Granularity**: Settings are per-row (Video) AND per-language.
-- **Parameters**:
-  - `fontSize` (Int: 20-100)
-  - `paragraphSpacing` (Int: 20-200)
-  - `speed` (Int: 0-100)
+- **Scope**: Settings must be **Global across all videos**. Changing font size on one video applies to all.
+- **Components**:
+  - `activeLanguage` ('de' | 'en') - Now part of the global setting.
+  - Per-Language Sub-settings:
+    - `fontSize`
+    - `paragraphSpacing`
+    - `speed`
+- **Storage**: Store in `PropertiesService.getScriptProperties()` (or a dedicated Settings sheet) instead of the Video row.
 
 ## 3. Implementation Plan
 
-### 3.1. Database Schema Update
+### 3.1. Backend Changes (`Database.js`)
 
-Currently, the sheet has 18 columns. We will add a **19th Column**: `Prompter_Settings`.
-To avoid clogging the sheet with 4 new columns, we will store a **JSON String** in this column.
+- **New Methods**:
+  - `getGlobalSettings()`: Returns JSON object from ScriptProperties key `TELEPROMPTER_SETTINGS`.
+  - `saveGlobalSettings(settings)`: Saves JSON string to ScriptProperties.
+- **Cleanup**: Ignore/Remove Column 19 logic from `saveVideo` / `getVideos` (or keep as deprecated fallback).
 
-**Column 19**: `Prompter_Settings`
-**Format (JSON)**:
+### 3.2. Frontend Changes (`javascript.html`)
 
-```json
-{
-  "de": {
-    "fontSize": 60,
-    "paragraphSpacing": 50,
-    "speed": 25
-  },
-  "en": {
-    "fontSize": 60,
-    "paragraphSpacing": 50,
-    "speed": 25
-  }
-}
-```
-
-### 3.2. Backend Changes (`Database.js`)
-
-- **`getVideos()`**: Read Column 19, parse JSON (handle errors/empty), and return as `prompter_settings` property.
-- **`saveVideo()`**: Accept `prompter_settings`, stringify it, and write to Column 19.
+- **Load**: On app start (or Teleprompter open), fetch `globalSettings`.
+- **Save**: Debounced save calls `saveGlobalSettings` instead of `saveVideo`.
+- **State**: `prompter` object initializes from these global values. `editingVideo.prompter_settings` is no longer used.
 
 ### 3.3. Frontend Changes (`TeleprompterView` & `javascript.html`)
 
 - **State**:
   - Add `prompter.activeLanguage` ('de' | 'en').
-  - Bind the UI sliders to `prompter.settings[activeLanguage].fontSize` etc.
 - **Watchers**:
   - When `activeLanguage` changes -> Update `prompter.fontSize` and `prompter.paragraphSpacing` from the saved settings.
   - When Sliders move -> Update `prompter.settings` and trigger a **Debounced Save**.

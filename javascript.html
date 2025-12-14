@@ -24,6 +24,8 @@
                 showGuides: true,
                 activeLanguage: 'de',
                 isFullscreen: false,
+                isInteracting: false, // Track manual scroll
+                globalSettings: {}, // Store loaded global config
                 scrollIds: null
             }
         },
@@ -378,11 +380,27 @@
                 this.editingVideo = {};
             },
             loadPrompterSettings() {
-                const settings = this.editingVideo.prompter_settings || {};
-                const lang = this.prompter.activeLanguage;
-                const langSettings = settings[lang] || {};
+                // FETCH GLOBAL SETTINGS
+                google.script.run
+                    .withSuccessHandler(settings => {
+                        this.prompter.globalSettings = settings || {};
+                        
+                        // Restore Global Language Selection
+                        if (this.prompter.globalSettings.activeLanguage) {
+                            this.prompter.activeLanguage = this.prompter.globalSettings.activeLanguage;
+                        }
 
-                // Apply to Runtime State (Fallbacks to Defaults)
+                        // Apply Settings for current language
+                        this.applyRuntimeSettings();
+                    })
+                    .withFailureHandler(err => console.error("Failed to load global settings", err))
+                    .getGlobalSettings();
+            },
+            applyRuntimeSettings() {
+                const lang = this.prompter.activeLanguage;
+                const langSettings = (this.prompter.globalSettings && this.prompter.globalSettings[lang]) || {};
+
+                // Apply to Runtime State (Fallbacks)
                 this.prompter.fontSize = langSettings.fontSize || 60;
                 this.prompter.paragraphSpacing = langSettings.paragraphSpacing || 50;
                 this.prompter.speed = (langSettings.speed !== undefined) ? langSettings.speed : 25;
@@ -390,43 +408,52 @@
             switchLanguage(lang) {
                 if (this.prompter.activeLanguage === lang) return;
                 
-                // 1. Save current settings before switching? 
-                // Actually, the sliders update 'prompter' directly, so we just need to ensure
-                // we've captured the latest values into the object before switching.
-                this.updateSettingsObject(); 
-
-                // 2. Switch Language
+                // 1. Sync current state to global object
+                this.syncToGlobalObject();
+                
+                // 2. Switch
                 this.prompter.activeLanguage = lang;
                 
-                // 3. Load new settings
-                this.loadPrompterSettings();
+                // 3. Mark new language in global object
+                if (!this.prompter.globalSettings) this.prompter.globalSettings = {};
+                this.prompter.globalSettings.activeLanguage = lang;
+
+                // 4. Apply new language settings
+                this.applyRuntimeSettings();
+
+                // 5. Trigger Save
+                this.debouncedSaveSettings();
             },
             updateSettingsObject() {
-                // Syncs current UI sliders back to the JSON structure
-                if (!this.editingVideo.prompter_settings) this.$set(this.editingVideo, 'prompter_settings', {});
+                this.syncToGlobalObject();
+                this.debouncedSaveSettings();
+            },
+            syncToGlobalObject() {
+                if (!this.prompter.globalSettings) this.prompter.globalSettings = {};
                 
                 const lang = this.prompter.activeLanguage;
-                if (!this.editingVideo.prompter_settings[lang]) this.editingVideo.prompter_settings[lang] = {};
+                // Ensure language key exists
+                if (!this.prompter.globalSettings[lang]) this.prompter.globalSettings[lang] = {};
 
-                const target = this.editingVideo.prompter_settings[lang];
+                const target = this.prompter.globalSettings[lang];
                 target.fontSize = this.prompter.fontSize;
                 target.paragraphSpacing = this.prompter.paragraphSpacing;
                 target.speed = this.prompter.speed;
-                
-                // Trigger Save
-                this.debouncedSaveSettings();
+
+                // Also save active language preference
+                this.prompter.globalSettings.activeLanguage = this.prompter.activeLanguage;
             },
             debouncedSaveSettings() {
                if (this.debounceTimer) clearTimeout(this.debounceTimer);
                this.debounceTimer = setTimeout(() => {
                    this.savePrompterSettings();
-               }, 1000); // 1-second auto-save
+               }, 1000); 
             },
             savePrompterSettings() {
-                // Silent Save
+                // Call Global Save
                 google.script.run
-                    .withFailureHandler(err => console.error("Settings Auto-Save Failed", err))
-                    .saveVideo(this.editingVideo);
+                    .withFailureHandler(err => console.error("Global Settings Save Failed", err))
+                    .saveGlobalSettings(this.prompter.globalSettings);
             },
             toggleFullScreen() {
                 const elem = document.documentElement;

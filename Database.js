@@ -238,3 +238,22 @@ function setAsActiveRecording(targetId) {
   SpreadsheetApp.flush(); // Force write to ensure subsequent reads are fresh
   return targetFound;
 }
+
+/**
+ * API: Get Global Teleprompter Settings
+ * Uses ScriptProperties to store settings for ALL videos.
+ */
+function getGlobalSettings() {
+  const props = PropertiesService.getScriptProperties();
+  const json = props.getProperty('TELEPROMPTER_SETTINGS');
+  return json ? JSON.parse(json) : {};
+}
+
+/**
+ * API: Save Global Teleprompter Settings
+ */
+function saveGlobalSettings(settings) {
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty('TELEPROMPTER_SETTINGS', JSON.stringify(settings));
+  return true;
+}
