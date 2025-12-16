@@ -112,6 +112,15 @@
 
                     return { url: link, type, thumb, label, color, description: linkObj.description };
                 });
+            },
+            currentPrompterMarkdown() {
+                const lang = this.prompter.activeLanguage;
+                // Get content based on language
+                const title = (lang === 'de' ? this.editingVideo.title_de : this.editingVideo.title_en) || '';
+                const text = (lang === 'de' ? this.editingVideo.text_de : this.editingVideo.text_en) || '';
+                
+                // Combine: Title (H1) + Spacing + Text
+                return `# ${title}\n\n${text}`;
             }
         },
         mounted() {
@@ -543,8 +552,12 @@
                         preciseScrollTop = container.scrollTop;
                     }
                     
+                    
                     // Apply Increment
-                    const pixels = this.prompter.speed * 0.1;
+                    // User Request: Map 0-100 slider to previous 0-30 range.
+                    // Previous Max @ 30 = 30 * 0.1 = 3.0px/frame
+                    // New Max @ 100 = 100 * 0.03 = 3.0px/frame
+                    const pixels = this.prompter.speed * 0.03;
                     preciseScrollTop += pixels;
                     container.scrollTop = preciseScrollTop;
 
