@@ -45,13 +45,28 @@
             <div class="text-xs text-gray-500">
             Showing {{ filteredVideos.length }} videos
             </div>
-            <div class="flex items-center space-x-2">
-            <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-            </button>
-            <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-            </button>
+            <div class="flex items-center space-x-3">
+                <!-- Language Switcher -->
+                <div class="flex items-center bg-white rounded-md border border-gray-300 p-0.5 h-8">
+                    <button @click="switchDashboardLanguage('de')" 
+                        :class="dashboardLanguage === 'de' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                        class="px-2 text-xs rounded-sm transition-colors focus:outline-none">DE</button>
+                    <button @click="switchDashboardLanguage('en')" 
+                        :class="dashboardLanguage === 'en' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                        class="px-2 text-xs rounded-sm transition-colors focus:outline-none">EN</button>
+                </div>
+                
+                <div class="h-4 w-px bg-gray-300"></div>
+
+                <!-- Layout Switcher -->
+                <div class="flex items-center space-x-1">
+                <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                </button>
+                <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                </div>
             </div>
     </div>
 </nav>

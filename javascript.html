@@ -5,6 +5,7 @@
             currentRole: 'All',
             viewMode: 'dashboard',
             layoutMode: 'grid',
+            dashboardLanguage: 'de', // Default Dashboard Language
             editingVideo: {},
             tagInput: '',
             sourceInput: '',
@@ -431,9 +432,14 @@
                     .withSuccessHandler(settings => {
                         this.prompter.globalSettings = settings || {};
                         
-                        // Restore Global Language Selection
+                        // Restore Teleprompter Language
                         if (this.prompter.globalSettings.activeLanguage) {
                             this.prompter.activeLanguage = this.prompter.globalSettings.activeLanguage;
+                        }
+
+                        // Restore Dashboard Language
+                        if (this.prompter.globalSettings.dashboardLanguage) {
+                            this.dashboardLanguage = this.prompter.globalSettings.dashboardLanguage;
                         }
 
                         // Apply Settings for current language
@@ -441,6 +447,15 @@
                     })
                     .withFailureHandler(err => console.error("Failed to load global settings", err))
                     .getGlobalSettings();
+            },
+            switchDashboardLanguage(lang) {
+                this.dashboardLanguage = lang;
+                
+                // Persist
+                if (!this.prompter.globalSettings) this.prompter.globalSettings = {};
+                this.prompter.globalSettings.dashboardLanguage = lang;
+                
+                this.savePrompterSettings(); // Uses the global save mechanism
             },
             applyRuntimeSettings() {
                 const lang = this.prompter.activeLanguage;
@@ -590,6 +605,14 @@
                     .saveVideo(this.editingVideo);
             },
             // UTILS
+            getVideoTitle(video) {
+                return this.dashboardLanguage === 'de' ? video.title_de : video.title_en;
+            },
+            getVideoTeaser(video) {
+                const text = this.dashboardLanguage === 'de' ? video.text_de : video.text_en;
+                if (!text) return 'No Text';
+                return text.length > 60 ? text.substring(0, 60) + '...' : text;
+            },
             renderMarkdown(text) {
                 if (!text) return '';
                 
