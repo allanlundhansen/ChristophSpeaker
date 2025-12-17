@@ -206,6 +206,21 @@
                 this.sourceInput = '';
                 this.viewMode = 'detail';
             },
+            openNextVideo() {
+                const list = this.filteredVideos;
+                // Find current video index
+                const currentIndex = list.findIndex(v => v.id === this.editingVideo.id);
+                
+                if (currentIndex !== -1 && currentIndex < list.length - 1) {
+                    // Open Next
+                    const nextWithId = list[currentIndex + 1];
+                    // We must refetch/find full object from Main Videos list if filtered list is subset? 
+                    // Actually filteredVideos contains full objects.
+                    this.openDetailView(nextWithId);
+                } else {
+                    alert("This is the last video in the current list.");
+                }
+            },
             closeDetailView() {
                 this.viewMode = 'dashboard';
                 this.editingVideo = {};
@@ -602,6 +617,41 @@
                         this.saving = false;
                     })
                     .saveVideo(this.editingVideo);
+            },
+            finishAndNext() {
+                // Find next 'recording_ready' video
+                // We use 'videos' (all loaded) not filteredVideos to ensure we search everything relevant
+                // Sort by sheet order? videos is already in sheet order (reversed? getVideos reverses it).
+                // Actually getVideos reverses it to show newest keys first. 
+                // So "Top of list" might mean "Next item in the array" if array is display order?
+                // Or user means "Top of the pending list".
+                // I will search for the first video in the current list that is 'recording_ready'.
+                
+                const nextVideo = this.videos.find(v => v.status === 'recording_ready');
+                
+                if (!nextVideo) {
+                    alert("No more videos ready for recording!");
+                    return;
+                }
+
+                if(!confirm(`Finish this video and start recording "${nextVideo.title_de || 'Next Video'}"?`)) return;
+
+                this.stopScrolling();
+                this.saving = true;
+
+                // Call Backend Transaction
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.saving = false;
+                        // The auto-switch logic in onVideosLoaded will handle opening the new video
+                        // because we just set it to 'recording'
+                        this.fetchVideos(true); 
+                    })
+                    .withFailureHandler((err) => {
+                        alert("Error switching video: " + err);
+                        this.saving = false;
+                    })
+                    .finishAndNextRecording(this.editingVideo.id, nextVideo.id);
             },
             // UTILS
             getVideoTitle(video) {

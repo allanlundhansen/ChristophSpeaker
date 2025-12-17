@@ -240,6 +240,37 @@ function setAsActiveRecording(targetId) {
 }
 
 /**
+ * API: Finish current recording and start next
+ * Transitions oldId -> edit_ready
+ * Transitions newId -> recording
+ */
+function finishAndNextRecording(oldId, newId) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const STATUS_COL = 16;
+  const ID_COL = 0;
+  
+  let oldUpdated = false;
+  let newUpdated = false;
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = data[i][ID_COL];
+    const rowIndex = i + 1;
+
+    if (rowId == oldId) {
+      sheet.getRange(rowIndex, STATUS_COL + 1).setValue('edit_ready');
+      oldUpdated = true;
+    } else if (rowId == newId) {
+      sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording');
+      newUpdated = true;
+    }
+  }
+  
+  SpreadsheetApp.flush();
+  return { old: oldUpdated, new: newUpdated };
+}
+
+/**
  * API: Get Global Teleprompter Settings
  * Uses ScriptProperties to store settings for ALL videos.
  */
