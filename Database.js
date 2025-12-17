@@ -241,7 +241,7 @@ function setAsActiveRecording(targetId) {
 
 /**
  * API: Finish current recording and start next
- * Transitions oldId -> edit_ready
+ * Transitions oldId -> recorded
  * Transitions newId -> recording
  */
 function finishAndNextRecording(oldId, newId) {
@@ -258,7 +258,7 @@ function finishAndNextRecording(oldId, newId) {
     const rowIndex = i + 1;
 
     if (rowId == oldId) {
-      sheet.getRange(rowIndex, STATUS_COL + 1).setValue('edit_ready');
+      sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recorded');
       oldUpdated = true;
     } else if (rowId == newId) {
       sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording');
