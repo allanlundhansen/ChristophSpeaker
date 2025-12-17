@@ -37,7 +37,7 @@
                 // 1. Filter by Role
                 if (this.currentRole !== 'All') {
                     let roleStatuses = [];
-                    if (this.currentRole === 'Author') roleStatuses = ['draft'];
+                    if (this.currentRole === 'Author') roleStatuses = ['idea', 'draft', 'discussion'];
                     else if (this.currentRole === 'Director') roleStatuses = ['recording_ready', 'recording'];
                     else if (this.currentRole === 'Speaker') roleStatuses = ['recording'];
                     else if (this.currentRole === 'Editor') roleStatuses = ['edit_ready'];
@@ -59,7 +59,7 @@
                 return filtered;
             },
             statuses() {
-                return ['draft', 'recording_ready', 'recording', 'edit_ready', 'publish_ready', 'published'];
+                return ['idea', 'draft', 'discussion', 'recording_ready', 'recording', 'edit_ready', 'publish_ready', 'published'];
             },
             customTags() {
                 return this.editingVideo.tags || '';
@@ -269,7 +269,9 @@
             },
             getStatusColor(status) {
                 const colors = {
+                    'idea': 'bg-blue-100 text-blue-800',
                     'draft': 'bg-gray-200 text-gray-800',
+                    'discussion': 'bg-orange-100 text-orange-800',
                     'recording_ready': 'bg-yellow-100 text-yellow-800',
                     'recording': 'bg-red-100 text-red-800',
                     'edit_ready': 'bg-purple-100 text-purple-800',
