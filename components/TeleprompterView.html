@@ -3,10 +3,11 @@
     <!-- Controls Interface (Top Bar - Auto-hides usually, but kept simple for now) -->
     <div class="flex-none bg-gray-900 border-b border-gray-800 p-4 flex items-center justify-between z-50 opacity-100 hover:opacity-100 transition-opacity">
         <div class="flex items-center space-x-4">
-            <button @click="closeTeleprompter" class="text-gray-400 hover:text-white flex items-center">
+            <button @click="closeTeleprompter" class="text-gray-400 hover:text-white flex items-center pr-2" title="Exit to Dashboard">
                 <svg class="w-6 h-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 Exit
             </button>
+
             <div class="h-6 w-px bg-gray-700"></div>
             
             <!-- Font Size -->
@@ -40,16 +41,6 @@
                 <button @click="switchLanguage('en')" :class="prompter.activeLanguage === 'en' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'" class="px-2 py-1 text-xs font-bold rounded">EN</button>
             </div>
 
-            <!-- Full Screen (Disabled for now) -->
-            <!--
-            <button @click="toggleFullScreen" :class="prompter.isFullscreen ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
-                 <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                 <span class="text-[10px] font-bold uppercase group-hover:text-white">Full</span>
-            </button>
-            -->
-
-
-
             <button @click="prompter.mirror = !prompter.mirror" :class="prompter.mirror ? 'text-indigo-400' : 'text-gray-400'" class="flex flex-col items-center group">
                 <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 <span class="text-[10px] font-bold uppercase group-hover:text-white">Mirror</span>
@@ -57,8 +48,28 @@
 
         </div>
 
+
         <!-- Finish Action -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-3">
+            <!-- Mode Toggle (Segmented Pill) -->
+            <div class="flex items-center bg-gray-800 p-1 rounded-full border border-gray-700 mr-2 shadow-inner">
+                <!-- Edit Mode -->
+                <button 
+                    @click="toggleTeleprompter"
+                    class="px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all text-gray-400 hover:text-white"
+                    title="Return to Detailed View"
+                >
+                    Edit
+                </button>
+                
+                <!-- Record Mode (Active) -->
+                <button class="px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-sm cursor-default">
+                    Record
+                </button>
+            </div>
+
+            <div class="h-6 w-px bg-gray-700 mx-1"></div>
+
             <button @click="markAsRecorded" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded font-medium text-xs shadow-sm flex items-center" title="Finish and setup next video">
                 Done
             </button>

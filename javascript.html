@@ -173,6 +173,13 @@
                 
                 // Combine: Title (H1) + Spacing + Text
                 return `# ${title}\n\n${text}`;
+            },
+            hasPrompterContent() {
+                const lang = this.prompter.activeLanguage;
+                // Check if editingVideo exists and has text for current prompter language
+                if (!this.editingVideo) return false;
+                const text = (lang === 'de' ? this.editingVideo.text_de : this.editingVideo.text_en) || '';
+                return text.trim().length > 0;
             }
         },
         mounted() {
@@ -494,6 +501,20 @@
                 if (document.fullscreenElement) document.exitFullscreen().catch(e => {});
                 this.viewMode = 'dashboard';
                 this.editingVideo = {};
+            },
+            closeTeleprompterToDetail() {
+                this.stopScrolling();
+                if (document.fullscreenElement) document.exitFullscreen().catch(e => {});
+                this.viewMode = 'detail';
+            },
+            toggleTeleprompter() {
+                if (this.viewMode === 'teleprompter') {
+                    this.closeTeleprompterToDetail();
+                } else if (this.viewMode === 'detail') {
+                    if (this.hasPrompterContent) {
+                        this.openTeleprompter(this.editingVideo);
+                    }
+                }
             },
             loadPrompterSettings() {
                 // FETCH GLOBAL SETTINGS

@@ -27,6 +27,27 @@
 
                 <div class="h-6 w-px bg-gray-300"></div>
 
+                <!-- Mode Toggle (Segmented Pill) -->
+                <div class="flex items-center bg-gray-100 p-1 rounded-full border border-gray-200 mr-2 shadow-inner">
+                    <!-- Edit Mode (Active) -->
+                    <button class="px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all bg-white text-indigo-600 shadow-sm cursor-default">
+                        Edit
+                    </button>
+                    
+                    <!-- Record Mode -->
+                    <button 
+                        @click="toggleTeleprompter" 
+                        :disabled="!hasPrompterContent"
+                        :class="[
+                            'px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all',
+                            !hasPrompterContent ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-gray-500 hover:text-indigo-600'
+                        ]"
+                        :title="!hasPrompterContent ? 'please write some content before activating teleprompter' : 'Switch to Recording Mode'"
+                    >
+                        Record
+                    </button>
+                </div>
+
                 <!-- Delete Button -->
                 <button @click="deleteVideo()" type="button" class="text-gray-400 hover:text-red-600 transition-colors p-2" title="Delete Video">
                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
