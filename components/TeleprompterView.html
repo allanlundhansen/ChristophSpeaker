@@ -13,12 +13,14 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs text-gray-500 uppercase font-bold">Size</span>
                 <input type="range" min="20" max="100" v-model="prompter.fontSize" @input="updateSettingsObject" class="w-24">
+                <span class="text-xs font-mono w-6">{{ prompter.fontSize }}</span>
             </div>
 
             <!-- Spacing -->
             <div class="flex items-center space-x-2">
                 <span class="text-xs text-gray-500 uppercase font-bold">Space</span>
                 <input type="range" min="20" max="200" v-model="prompter.paragraphSpacing" @input="updateSettingsObject" class="w-24">
+                <span class="text-xs font-mono w-8">{{ prompter.paragraphSpacing }}</span>
             </div>
 
             <!-- Scroll Speed -->
