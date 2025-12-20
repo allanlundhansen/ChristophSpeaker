@@ -177,6 +177,7 @@
         },
         mounted() {
             this.fetchVideos();
+            this.loadPrompterSettings();
 
             setInterval(() => {
                 // Poll if in Dashboard OR Teleprompter (for auto-switch)
