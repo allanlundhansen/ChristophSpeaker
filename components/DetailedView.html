@@ -7,14 +7,6 @@
                <button @click="closeDetailView" class="text-gray-400 hover:text-gray-600 transition-colors">
                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                </button>
-               <div class="flex flex-col min-w-0">
-                    <input v-model="editingVideo.title_de" @input="debouncedTranslate('title_de', editingVideo.title_de)" type="text" class="text-lg font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent placeholder-gray-400 w-96 truncate" placeholder="Untitled Video">
-                    <span class="text-xs text-gray-400 font-mono flex items-center">
-                       {{ editingVideo.id }}
-                       <span class="mx-1">•</span>
-                       {{ editingVideo.date }}
-                    </span>
-               </div>
            </div>
            
            <div class="flex items-center space-x-3 flex-none">
