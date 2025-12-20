@@ -241,10 +241,10 @@ function setAsActiveRecording(targetId) {
 
 /**
  * API: Finish current recording and start next
- * Transitions oldId -> recorded
+ * Transition oldId -> targetStatus
  * Transitions newId -> recording
  */
-function finishAndNextRecording(oldId, newId) {
+function finishAndNextRecording(oldId, newId, targetStatus) {
   const sheet = getSheet();
   const data = sheet.getDataRange().getValues();
   const STATUS_COL = 16;
@@ -258,7 +258,7 @@ function finishAndNextRecording(oldId, newId) {
     const rowIndex = i + 1;
 
     if (rowId == oldId) {
-      sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recorded');
+      sheet.getRange(rowIndex, STATUS_COL + 1).setValue(targetStatus || 'recorded');
       oldUpdated = true;
     } else if (rowId == newId) {
       sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording');
@@ -268,6 +268,25 @@ function finishAndNextRecording(oldId, newId) {
   
   SpreadsheetApp.flush();
   return { old: oldUpdated, new: newUpdated };
+}
+
+/**
+ * API: Update status of a single video
+ */
+function updateVideoStatus(id, status) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const STATUS_COL = 16;
+  const ID_COL = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][ID_COL] == id) {
+      sheet.getRange(i + 1, STATUS_COL + 1).setValue(status);
+      SpreadsheetApp.flush();
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

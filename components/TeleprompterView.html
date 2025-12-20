@@ -70,12 +70,12 @@
 
             <div class="h-6 w-px bg-gray-700 mx-1"></div>
 
-            <button @click="markAsRecorded" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded font-medium text-xs shadow-sm flex items-center" title="Finish and setup next video">
-                Done
+            <button @click="completeCurrentAndNext('discussion')" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded font-medium text-xs shadow-sm flex items-center transition-all" title="Need to discuss this take or script">
+                Move to Discussion
             </button>
-            <button @click="finishAndNext" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded font-bold text-sm shadow-sm flex items-center">
-                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-                Next Recording
+            <button @click="completeCurrentAndNext('recorded')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded font-bold text-sm shadow-sm flex items-center transition-all">
+                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                Move to Recorded
             </button>
         </div>
     </div>
