@@ -239,13 +239,11 @@
                 this.error = "Error loading videos: " + error.message;
                 this.loading = false;
             },
-            openNewVideoModal() {
-                this.editingVideo = { status: 'draft' };
-                this.viewMode = 'edit';
-            },
-            openEditModal(video) {
-                this.editingVideo = JSON.parse(JSON.stringify(video));
-                this.viewMode = 'edit';
+            prepareNewVideo() {
+                this.editingVideo = { status: 'draft', title_de: '', text_de: '', source_link: '[]', tags: '' };
+                this.tagInput = '';
+                this.sourceInput = '';
+                this.viewMode = 'detail';
             },
             openDetailView(video) {
                 // SMART CLICK: If Speaker + Recording -> Open Teleprompter directly
@@ -278,18 +276,15 @@
                 this.viewMode = 'dashboard';
                 this.editingVideo = {};
             },
-            closeModal() {
-                this.viewMode = 'dashboard';
-                this.editingVideo = {};
-            },
             saveVideo() {
                 this.saving = true;
-                const wasEditing = this.viewMode === 'edit';
                 google.script.run
-                    .withSuccessHandler(() => {
+                    .withSuccessHandler((savedVideo) => {
                         this.saving = false;
-                        if (wasEditing) {
-                            this.closeModal();
+                        // If it was a new video, the backend should return the updated object (with ID)
+                        // This prevents creating duplicates if saved again
+                        if (savedVideo && typeof savedVideo === 'object') {
+                            this.editingVideo = JSON.parse(JSON.stringify(savedVideo));
                         }
                         this.fetchVideos(true);
                     })

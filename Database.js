@@ -180,7 +180,7 @@ function saveVideo(data) {
 
   // Write the full row at once
   sheet.getRange(rowIndex, 1, 1, 19).setValues([rowData]);
-  return true;
+  return data;
 }
 
 function deleteVideo(id) {
