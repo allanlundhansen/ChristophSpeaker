@@ -474,6 +474,11 @@
 
                 // Load Settings for Default Language
                 this.loadPrompterSettings();
+
+                // Auto-play by default
+                this.$nextTick(() => {
+                    this.startScrolling();
+                });
             },
             handleInteractionStart() {
                 this.prompter.isInteracting = true;
