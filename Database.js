@@ -98,8 +98,7 @@ function getVideos() {
         date: row[17] ? new Date(row[17]).toLocaleDateString() : "",
         prompter_settings: settings
       };
-    })
-    .reverse(); // Show newest first
+    });
 }
 
 /**
