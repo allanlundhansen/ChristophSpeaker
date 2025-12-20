@@ -2,7 +2,6 @@
     new Vue({
         el: '#app',
         data: {
-            currentRole: 'All',
             viewMode: 'dashboard',
             layoutMode: 'grid',
             dashboardLanguage: 'de', // Default Dashboard Language
@@ -34,19 +33,7 @@
             filteredVideos() {
                 let filtered = this.videos;
 
-                // 1. Filter by Role
-                if (this.currentRole !== 'All') {
-                    let roleStatuses = [];
-                    if (this.currentRole === 'Author') roleStatuses = ['idea', 'draft', 'discussion'];
-                    else if (this.currentRole === 'Director') roleStatuses = ['recording_ready', 'recording', 'recorded'];
-                    else if (this.currentRole === 'Speaker') roleStatuses = ['recording'];
-                    else if (this.currentRole === 'Editor') roleStatuses = ['edit_ready'];
-                    else if (this.currentRole === 'Manager') roleStatuses = ['publish_ready', 'published'];
-                    
-                    filtered = filtered.filter(v => roleStatuses.includes(v.status));
-                }
-
-                // 2. Filter by View/Status
+                // Filter by View/Status
                 if (this.filterStatus !== 'All') {
                     filtered = filtered.filter(v => v.status === this.filterStatus);
                 }
@@ -251,6 +238,17 @@
                 this.tagInput = '';
                 this.sourceInput = '';
                 this.viewMode = 'detail';
+            },
+            editOldestDraft() {
+                // Find all drafts
+                const drafts = this.videos.filter(v => v.status === 'draft');
+                if (drafts.length === 0) {
+                    alert("No drafts found.");
+                    return;
+                }
+                // "lowest on the sheet list" corresponds to the last matching element in the raw array
+                const oldestDraft = drafts[drafts.length - 1]; 
+                this.openDetailView(oldestDraft);
             },
             openDetailView(video) {
                 // SMART CLICK: If Speaker + Recording -> Open Teleprompter directly

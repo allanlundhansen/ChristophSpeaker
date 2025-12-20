@@ -5,30 +5,18 @@
                 <div class="flex-shrink-0 flex items-center">
                     <h1 class="text-xl font-bold text-gray-800">YSMS</h1>
                 </div>
-                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                    <!-- Role Switcher -->
-                    <div class="flex items-center space-x-2 ml-4">
-                        <span class="text-sm text-gray-500">View As:</span>
-                        <select v-model="currentRole" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="All">All Roles</option>
-                            <option value="Author">Author</option>
-                            <option value="Director">Director</option>
-                            <option value="Speaker">Speaker</option>
-                            <option value="Editor">Editor</option>
-                            <option value="Manager">Manager</option>
-                        </select>
-                    </div>
-                    <!-- Dropdown Filter (Visible for all roles) -->
-                    <div class="flex items-center space-x-2 ml-4">
-                        <span class="text-sm text-gray-500">Filter:</span>
-                        <select v-model="filterStatus" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="All">All Views</option> 
-                            <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
-                        </select>
-                    </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <span class="text-xl font-bold text-gray-800">Video Pipeline</span>
                 </div>
             </div>
             <div class="flex items-center">
+                <button @click="editOldestDraft" type="button" 
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-2 transition-all">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Start Editing
+                </button>
                 <button @click="prepareNewVideo" type="button"
                     class="relative inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -40,33 +28,61 @@
         </div>
     </div>
 
-    <!-- Secondary Navbar (Filters & Layout) -->
-    <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center h-12">
-            <div class="text-xs text-gray-500">
-            Showing {{ filteredVideos.length }} videos
-            </div>
-            <div class="flex items-center space-x-3">
-                <!-- Language Switcher -->
-                <div class="flex items-center bg-white rounded-md border border-gray-300 p-0.5 h-8">
-                    <button @click="switchDashboardLanguage('de')" 
-                        :class="dashboardLanguage === 'de' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
-                        class="px-2 text-xs rounded-sm transition-colors focus:outline-none">DE</button>
-                    <button @click="switchDashboardLanguage('en')" 
-                        :class="dashboardLanguage === 'en' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
-                        class="px-2 text-xs rounded-sm transition-colors focus:outline-none">EN</button>
-                </div>
-                
-                <div class="h-4 w-px bg-gray-300"></div>
+    <!-- Secondary Navbar (Consolidated Filters & Utilities) -->
+    <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 sm:px-6 lg:px-8 flex flex-wrap items-center gap-y-3 gap-x-6 min-h-[3.5rem]">
+        <!-- Status Filter Buttons -->
+        <div class="flex flex-wrap gap-2 flex-grow">
+            <button 
+                @click="filterStatus = 'All'"
+                :class="[
+                    'flex-grow sm:flex-initial px-3 sm:px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border shadow-sm',
+                    filterStatus === 'All' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-[1.02]' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                ]"
+            >
+                All
+            </button>
+            <button 
+                v-for="status in statuses" 
+                :key="status"
+                @click="filterStatus = status"
+                :class="[
+                    'flex-grow sm:flex-initial px-3 sm:px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border shadow-sm',
+                    filterStatus === status ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-[1.02]' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                ]"
+            >
+                {{ status.replace('_', ' ') }}
+            </button>
+        </div>
 
-                <!-- Layout Switcher -->
-                <div class="flex items-center space-x-1">
+        <!-- Utility Group: Language, Layout, Count -->
+        <div class="flex items-center space-x-3 flex-none ml-auto">
+            <!-- Language Switcher -->
+            <div class="flex items-center bg-white rounded-md border border-gray-300 p-0.5 h-7 shadow-sm">
+                <button @click="switchDashboardLanguage('de')" 
+                    :class="dashboardLanguage === 'de' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                    class="px-2 text-[10px] rounded-sm transition-colors focus:outline-none">DE</button>
+                <button @click="switchDashboardLanguage('en')" 
+                    :class="dashboardLanguage === 'en' ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                    class="px-2 text-[10px] rounded-sm transition-colors focus:outline-none">EN</button>
+            </div>
+            
+            <div class="h-4 w-px bg-gray-300"></div>
+
+            <!-- Layout Switcher -->
+            <div class="flex items-center space-x-1">
                 <button @click="layoutMode = 'grid'" :class="{'text-indigo-600': layoutMode === 'grid', 'text-gray-400': layoutMode !== 'grid'}" class="p-1 hover:text-indigo-800">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 </button>
                 <button @click="layoutMode = 'list'" :class="{'text-indigo-600': layoutMode === 'list', 'text-gray-400': layoutMode !== 'list'}" class="p-1 hover:text-indigo-800">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
-                </div>
             </div>
+
+            <div class="h-4 w-px bg-gray-300"></div>
+
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                {{ filteredVideos.length }} videos
+            </div>
+        </div>
     </div>
 </nav>
