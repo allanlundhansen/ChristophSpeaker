@@ -107,6 +107,11 @@ function getVideos() {
  */
 function saveVideo(data) {
   const sheet = getSheet();
+  // If new video is being set to recording, demote any existing active recording
+  if (data.status === 'recording') {
+    demoteOtherRecordings(data.id || "NEW_VIDEO");
+  }
+
   const rows = sheet.getDataRange().getValues();
   let rowIndex = -1;
 
@@ -213,39 +218,47 @@ function deleteVideo(id) {
  * Demotes any other 'recording' videos to 'recording_ready'.
  */
 function setAsActiveRecording(targetId) {
+  // Use our new demoter helper
+  demoteOtherRecordings(targetId);
+
   const sheet = getSheet();
   const data = sheet.getDataRange().getValues();
-  
-  // Column Indexes (0-based)
-  // ID is Col 0 (A)
-  // Status is Col 16 (Q)
   const ID_COL = 0;
   const STATUS_COL = 16;
-  
-  // We need to write updates. To be efficient, we can collect them.
-  // Or just write directly as we iterate since volume is low.
   
   let targetFound = false;
 
   for (let i = 1; i < data.length; i++) {
-    const rowId = data[i][ID_COL];
-    const currentStatus = data[i][STATUS_COL];
-    const rowIndex = i + 1; // 1-based index for Sheet API
-
-    if (rowId == targetId) {
-       // Promote to recording
-       if (currentStatus !== 'recording') {
-         sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording');
-       }
+    if (data[i][ID_COL] == targetId) {
+       sheet.getRange(i + 1, STATUS_COL + 1).setValue('recording');
        targetFound = true;
-    } else if (currentStatus === 'recording') {
-       // Demote others to recording_ready
-       sheet.getRange(rowIndex, STATUS_COL + 1).setValue('recording_ready');
+       break;
     }
   }
   
-  SpreadsheetApp.flush(); // Force write to ensure subsequent reads are fresh
+  SpreadsheetApp.flush();
   return targetFound;
+}
+
+/**
+ * Helper: Demotes any 'recording' videos to 'recording_ready' 
+ * except for the video with the specified ID.
+ */
+function demoteOtherRecordings(exceptId) {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const ID_COL = 0;
+  const STATUS_COL = 16;
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = data[i][ID_COL];
+    const currentStatus = data[i][STATUS_COL];
+
+    if (currentStatus === 'recording' && rowId != exceptId) {
+      sheet.getRange(i + 1, STATUS_COL + 1).setValue('recording_ready');
+    }
+  }
+  SpreadsheetApp.flush();
 }
 
 /**

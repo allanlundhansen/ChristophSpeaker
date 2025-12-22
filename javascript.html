@@ -481,10 +481,13 @@
                     this.closeTeleprompterToDetail();
                 } else if (this.viewMode === 'detail') {
                     if (this.hasPrompterContent) {
+                        // FORCE status to recording when entering prompter
+                        this.editingVideo.status = 'recording';
+                        
                         // AUTO-SAVE before entering Teleprompter
                         this.saveVideo(() => {
                             this.openTeleprompter(this.editingVideo);
-                        });
+                        }, true); // skipUpdate since we are changing view
                     }
                 }
             },
