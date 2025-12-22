@@ -101,8 +101,8 @@
                         <textarea 
                             v-model="editingVideo.title_de" 
                             @input="debouncedTranslate('title_de', editingVideo.title_de)"
-                            rows="4"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-bold text-base leading-tight p-3 resize-none min-h-[200px]" 
+                            rows="3"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-bold text-base leading-tight p-3 resize-none min-h-[80px]" 
                             placeholder="Enter German Title..."></textarea>
                     </div>
                     <div class="flex-grow flex flex-col">
@@ -122,8 +122,8 @@
                         <textarea 
                             :value="editingVideo.title_en" 
                             readonly
-                            rows="4"
-                            class="block w-full border-gray-200 bg-gray-100 rounded-md shadow-sm text-gray-600 font-bold text-base leading-tight p-3 resize-none cursor-default focus:ring-0 min-h-[200px]" 
+                            rows="3"
+                            class="block w-full border-gray-200 bg-gray-100 rounded-md shadow-sm text-gray-600 font-bold text-base leading-tight p-3 resize-none cursor-default focus:ring-0 min-h-[80px]" 
                             placeholder="Translated Title..."></textarea>
                     </div>
                     <div class="flex-grow flex flex-col">
