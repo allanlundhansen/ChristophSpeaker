@@ -22,7 +22,7 @@
         <!-- Dashboard Grid -->
         <div v-if="!loading && layoutMode === 'grid'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div v-for="video in filteredVideos" :key="video.id" 
-                class="bg-white shadow rounded-lg card-hover transition-all duration-200 cursor-pointer relative"
+                :class="['bg-white shadow rounded-lg card-hover transition-all duration-200 cursor-pointer relative', activeStatusSelectorId === video.id ? 'z-50' : '']"
                 @click="video.status === 'recording' ? false : openDetailView(video)">
                 <div class="px-4 py-5 sm:p-6" @click="openDetailView(video)"> <!-- NOTE: We should centralize the click handler. -->
                     <div class="flex items-center justify-between mb-4">
@@ -72,7 +72,9 @@
         <!-- Dashboard List (Table) -->
         <div v-if="!loading && layoutMode === 'list'" class="bg-white shadow sm:rounded-md">
             <ul class="divide-y divide-gray-200">
-                <li v-for="video in filteredVideos" :key="video.id" @click="openDetailView(video)" class="cursor-pointer">
+                <li v-for="video in filteredVideos" :key="video.id" 
+                    @click="openDetailView(video)" 
+                    :class="['cursor-pointer', activeStatusSelectorId === video.id ? 'relative z-50' : '']">
                     <div class="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50 transition duration-150 ease-in-out">
                         <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                             <div class="flex items-center">
@@ -93,7 +95,7 @@
                                 </div>
                             </div>
                             <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                                <div class="flex overflow-hidden text-sm space-x-4 items-center">
+                                <div class="flex text-sm space-x-4 items-center">
                                     <div class="text-xs text-gray-400">{{ video.date }}</div>
                                     
 
@@ -107,7 +109,7 @@
                                         
                                         <!-- Dropdown Menu -->
                                         <div v-if="activeStatusSelectorId === video.id" 
-                                             class="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100 overflow-hidden"
+                                             class="absolute right-0 top-full mt-1 w-48 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100 overflow-visible"
                                              @click.stop>
                                             <div class="py-1">
                                                 <button v-for="status in statuses" :key="status"
