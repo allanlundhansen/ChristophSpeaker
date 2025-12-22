@@ -169,12 +169,14 @@
                 this.loading = false;
             },
             prepareNewVideo() {
+                if (this.viewMode === 'detail') this.saveVideo(null, true); // Background auto-save, skip UI update
                 this.editingVideo = { status: 'draft', title_de: '', text_de: '', source_link: '[]', tags: '' };
                 this.tagInput = '';
                 this.sourceInput = '';
                 this.viewMode = 'detail';
             },
             editOldestDraft() {
+                if (this.viewMode === 'detail') this.saveVideo(null, true); // Background auto-save
                 // Find all drafts
                 const drafts = this.videos.filter(v => v.status === 'draft');
                 if (drafts.length === 0) {
@@ -193,41 +195,46 @@
                 }
 
                 this.editingVideo = JSON.parse(JSON.stringify(video));
+                this._originalVideoState = JSON.stringify(this.editingVideo); // Track for changes
                 this.tagInput = '';
                 this.sourceInput = '';
                 this.viewMode = 'detail';
             },
             openNextVideo() {
-                const list = this.filteredVideos;
-                // Find current video index
-                const currentIndex = list.findIndex(v => v.id === this.editingVideo.id);
-                
-                if (currentIndex !== -1 && currentIndex < list.length - 1) {
-                    // Open Next
-                    const nextWithId = list[currentIndex + 1];
-                    // We must refetch/find full object from Main Videos list if filtered list is subset? 
-                    // Actually filteredVideos contains full objects.
-                    this.openDetailView(nextWithId);
-                } else {
-                    alert("This is the last video in the current list.");
-                }
+                // AUTO-SAVE before moving
+                this.saveVideo(() => {
+                    const list = this.filteredVideos;
+                    const currentIndex = list.findIndex(v => v.id === this.editingVideo.id);
+                    
+                    if (currentIndex !== -1 && currentIndex < list.length - 1) {
+                        const nextWithId = list[currentIndex + 1];
+                        this.openDetailView(nextWithId);
+                    } else {
+                        alert("This is the last video in the current list.");
+                    }
+                });
             },
             closeDetailView() {
+                // BACKGROUND AUTO-SAVE (Instant UI transition)
+                this.saveVideo(null, true); // Fire and forget, skip state update
                 this.viewMode = 'dashboard';
                 this.editingVideo = {};
             },
-            saveVideo() {
+            saveVideo(onSuccess, skipUpdate = false) {
                 this.saving = true;
                 google.script.run
                     .withSuccessHandler((savedVideo) => {
                         this.saving = false;
-                        
-                        // If it was a new video, the backend should return the updated object (with ID)
-                        // This prevents creating duplicates if saved again
-                        if (savedVideo && typeof savedVideo === 'object') {
-                            this.editingVideo = JSON.parse(JSON.stringify(savedVideo));
+                        if (!skipUpdate && savedVideo && typeof savedVideo === 'object') {
+                            // Only update if we are still in detail view AND it's the same video
+                            // Matches if: IDs are same OR it was a new video and we are still in detail mode
+                            const currentId = this.editingVideo ? this.editingVideo.id : null;
+                            if (this.viewMode === 'detail' && (currentId === savedVideo.id || !currentId)) {
+                                this.editingVideo = JSON.parse(JSON.stringify(savedVideo));
+                            }
                         }
                         this.fetchVideos(true);
+                        if (onSuccess && typeof onSuccess === 'function') onSuccess(savedVideo);
                     })
                     .withFailureHandler((err) => {
                         this.saving = false;
@@ -447,7 +454,10 @@
                     this.closeTeleprompterToDetail();
                 } else if (this.viewMode === 'detail') {
                     if (this.hasPrompterContent) {
-                        this.openTeleprompter(this.editingVideo);
+                        // AUTO-SAVE before entering Teleprompter
+                        this.saveVideo(() => {
+                            this.openTeleprompter(this.editingVideo);
+                        });
                     }
                 }
             },
