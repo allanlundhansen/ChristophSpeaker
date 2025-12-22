@@ -174,6 +174,7 @@
                 this.tagInput = '';
                 this.sourceInput = '';
                 this.viewMode = 'detail';
+                this.triggerAllAutoGrow();
             },
             editOldestDraft() {
                 if (this.viewMode === 'detail') this.saveVideo(null, true); // Background auto-save
@@ -199,6 +200,7 @@
                 this.tagInput = '';
                 this.sourceInput = '';
                 this.viewMode = 'detail';
+                this.triggerAllAutoGrow();
             },
             openNextVideo() {
                 // AUTO-SAVE before moving
@@ -215,22 +217,37 @@
                 });
             },
             closeDetailView() {
-                // BACKGROUND AUTO-SAVE (Instant UI transition)
-                this.saveVideo(null, true); // Fire and forget, skip state update
-                this.viewMode = 'dashboard';
-                this.editingVideo = {};
+                // BLOCKING SAVE: Ensuring notes are saved before returning to dashboard
+                // This prevents race conditions where the dashboard shows old data.
+                this.saveVideo(() => {
+                    this.viewMode = 'dashboard';
+                }, true); // skipUpdate as we are leaving
             },
             saveVideo(onSuccess, skipUpdate = false) {
+                // DEFENSIVE CLONING: Capture data immediately to prevent race conditions during navigation
+                const dataToSave = JSON.parse(JSON.stringify(this.editingVideo || {}));
+                
+                // Guard: Don't save if object is empty or missing critical status (e.g. if navigation already cleared it)
+                if (!dataToSave.status) return;
+
                 this.saving = true;
                 google.script.run
                     .withSuccessHandler((savedVideo) => {
                         this.saving = false;
-                        if (!skipUpdate && savedVideo && typeof savedVideo === 'object') {
-                            // Only update if we are still in detail view AND it's the same video
-                            // Matches if: IDs are same OR it was a new video and we are still in detail mode
+                        if (savedVideo && typeof savedVideo === 'object') {
+                            // 1. Update the item in the master list for instant dashboard updates
+                            const idx = this.videos.findIndex(v => v.id === savedVideo.id);
+                            if (idx !== -1) {
+                                this.$set(this.videos, idx, JSON.parse(JSON.stringify(savedVideo)));
+                            } else if (savedVideo.id) {
+                                this.videos.unshift(JSON.parse(JSON.stringify(savedVideo)));
+                            }
+
+                            // 2. Update local editing state if we are still in detail view
                             const currentId = this.editingVideo ? this.editingVideo.id : null;
                             if (this.viewMode === 'detail' && (currentId === savedVideo.id || !currentId)) {
                                 this.editingVideo = JSON.parse(JSON.stringify(savedVideo));
+                                this.triggerAllAutoGrow(); 
                             }
                         }
                         this.fetchVideos(true);
@@ -240,7 +257,22 @@
                         this.saving = false;
                         alert("Save Failed: " + err.message);
                     })
-                    .saveVideo(this.editingVideo);
+                    .saveVideo(dataToSave);
+            },
+            autoGrow(e) {
+                const el = e.target || e;
+                if (!el) return;
+                el.style.height = "auto";
+                el.style.height = (el.scrollHeight) + "px";
+            },
+            triggerAllAutoGrow() {
+                this.$nextTick(() => {
+                    const textareas = document.querySelectorAll('textarea');
+                    textareas.forEach(el => {
+                        el.style.height = "auto";
+                        el.style.height = (el.scrollHeight) + "px";
+                    });
+                });
             },
             deleteVideo(video) {
                 // If video is passed (Dashboard delete), use it. Otherwise use editingVideo (Detail delete).
@@ -287,6 +319,7 @@
                     .withSuccessHandler((translatedText) => {
                         this.$set(this.editingVideo, targetField, translatedText);
                         this.translating = false;
+                        this.triggerAllAutoGrow();
                     })
                     .withFailureHandler(() => {
                         this.translating = false;

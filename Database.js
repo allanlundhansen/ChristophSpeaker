@@ -185,6 +185,9 @@ function saveVideo(data) {
   if (data.date instanceof Date) {
     data.date = data.date.toLocaleDateString();
   }
+
+  console.log("Server saveVideo called for ID:", data.id, "Status:", data.status);
+  console.log("Data Fields - Ideas:", !!data.ideas, "Instruc:", !!data.editor_instructions, "Notes:", !!data.director_notes);
   
   return data;
 }
