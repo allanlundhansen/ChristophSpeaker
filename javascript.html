@@ -189,12 +189,6 @@
                 this.openDetailView(oldestDraft);
             },
             openDetailView(video) {
-                // SMART CLICK: If Recording -> Open Teleprompter directly
-                if (video.status === 'recording') {
-                    this.openTeleprompter(video);
-                    return;
-                }
-
                 this.editingVideo = JSON.parse(JSON.stringify(video));
                 this._originalVideoState = JSON.stringify(this.editingVideo); // Track for changes
                 this.tagInput = '';
