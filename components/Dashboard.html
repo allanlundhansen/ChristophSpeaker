@@ -22,7 +22,7 @@
         <!-- Dashboard Grid -->
         <div v-if="!loading && layoutMode === 'grid'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div v-for="video in filteredVideos" :key="video.id" 
-                class="bg-white overflow-hidden shadow rounded-lg card-hover transition-all duration-200 cursor-pointer"
+                class="bg-white shadow rounded-lg card-hover transition-all duration-200 cursor-pointer relative"
                 @click="video.status === 'recording' ? false : openDetailView(video)">
                 <div class="px-4 py-5 sm:p-6" @click="openDetailView(video)"> <!-- NOTE: We should centralize the click handler. -->
                     <div class="flex items-center justify-between mb-4">
@@ -36,7 +36,30 @@
 
                     <div class="mt-4 flex justify-end space-x-3 border-t pt-4">
 
-                        <span class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</span>
+                        <!-- Status Selector Dropdown -->
+                        <div class="relative status-selector-container">
+                            <button @click.stop="toggleStatusSelector(video.id)" class="text-gray-400 hover:text-gray-600 group p-1" title="Change Status">
+                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div v-if="activeStatusSelectorId === video.id" 
+                                 class="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100 overflow-hidden"
+                                 @click.stop>
+                                <div class="py-1">
+                                    <button v-for="status in statuses" :key="status"
+                                        @click="updateStatusFromDashboard(video, status)"
+                                        :class="[
+                                            video.status === status ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-50',
+                                            'block w-full text-left px-4 py-2 text-xs uppercase tracking-wider'
+                                        ]">
+                                        {{ status }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         
                         <button @click.stop="deleteVideo(video)" class="text-gray-400 hover:text-red-600">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -47,7 +70,7 @@
         </div>
 
         <!-- Dashboard List (Table) -->
-        <div v-if="!loading && layoutMode === 'list'" class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div v-if="!loading && layoutMode === 'list'" class="bg-white shadow sm:rounded-md">
             <ul class="divide-y divide-gray-200">
                 <li v-for="video in filteredVideos" :key="video.id" @click="openDetailView(video)" class="cursor-pointer">
                     <div class="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50 transition duration-150 ease-in-out">
@@ -74,7 +97,30 @@
                                     <div class="text-xs text-gray-400">{{ video.date }}</div>
                                     
 
-                                    <span class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</span>
+                                    <!-- Status Selector Dropdown (List View) -->
+                                    <div class="relative status-selector-container">
+                                        <button @click.stop="toggleStatusSelector(video.id)" class="text-gray-400 hover:text-gray-600 group p-1" title="Change Status">
+                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        <!-- Dropdown Menu -->
+                                        <div v-if="activeStatusSelectorId === video.id" 
+                                             class="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100 overflow-hidden"
+                                             @click.stop>
+                                            <div class="py-1">
+                                                <button v-for="status in statuses" :key="status"
+                                                    @click="updateStatusFromDashboard(video, status)"
+                                                    :class="[
+                                                        video.status === status ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-50',
+                                                        'block w-full text-left px-4 py-2 text-xs uppercase tracking-wider'
+                                                    ]">
+                                                    {{ status }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <button @click.stop="deleteVideo(video)" class="text-gray-400 hover:text-red-600 ml-2">
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>

@@ -27,7 +27,8 @@
                 globalSettings: {}, // Store loaded global config
                 updateKey: 0, // Force re-render key
                 scrollIds: null
-            }
+            },
+            activeStatusSelectorId: null // Global state for dashboard status dropdown
         },
         computed: {
             filteredVideos() {
@@ -108,6 +109,13 @@
         mounted() {
             this.fetchVideos();
             this.loadPrompterSettings();
+
+            // Click-outside listener for status selector
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.status-selector-container')) {
+                    this.activeStatusSelectorId = null;
+                }
+            });
 
             setInterval(() => {
                 // Poll ONLY in Teleprompter (for Director sync)
@@ -431,6 +439,47 @@
                         this.fetchVideos(); // Revert on error
                     })
                     .setAsActiveRecording(targetId);
+            },
+            // DASHBOARD QUICK STATUS
+            toggleStatusSelector(videoId) {
+                if (this.activeStatusSelectorId === videoId) {
+                    this.activeStatusSelectorId = null;
+                } else {
+                    this.activeStatusSelectorId = videoId;
+                }
+            },
+            updateStatusFromDashboard(video, newStatus) {
+                if (video.status === newStatus) {
+                    this.activeStatusSelectorId = null;
+                    return;
+                }
+
+                // If user selected 'recording', use the specialized method that enforces single recording rule
+                if (newStatus === 'recording') {
+                    this.setRecordingStatus(video);
+                    this.activeStatusSelectorId = null;
+                    return;
+                }
+
+                this.saving = true;
+                const originalStatus = video.status;
+                
+                // Optimistic UI
+                video.status = newStatus;
+                this.activeStatusSelectorId = null;
+
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.saving = false;
+                        this.fetchVideos(true);
+                    })
+                    .withFailureHandler((err) => {
+                        alert("Update failed: " + err);
+                        video.status = originalStatus;
+                        this.saving = false;
+                        this.fetchVideos();
+                    })
+                    .updateVideoStatus(video.id, newStatus);
             },
             // TELEPROMPTER LOGIC
             openTeleprompter(video) {
