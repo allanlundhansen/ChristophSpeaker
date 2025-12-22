@@ -110,12 +110,12 @@
             this.loadPrompterSettings();
 
             setInterval(() => {
-                // Poll if in Dashboard OR Teleprompter (for auto-switch)
-                // But NOT if we are actively saving (this.saving)
-                if (!this.saving && (this.viewMode === 'dashboard' || this.viewMode === 'teleprompter')) {
+                // Poll ONLY in Teleprompter (for Director sync)
+                // Dashboard update is manual (fetchVideos called on load/save/close)
+                if (!this.saving && this.viewMode === 'teleprompter') {
                     this.fetchVideos(true);
                 }
-            }, 4000); // Increased to 4s to avoid "Too many scripts" quota error
+            }, 5000); 
         },
         methods: {
             fetchVideos(silent = false) {
@@ -126,7 +126,6 @@
                     .getVideos();
             },
             onVideosLoaded(data) {
-                console.log("Videos loaded:", data.length);
                 if (this.viewMode === 'teleprompter') {
                     // Force Teleprompter Sync even if saving (background poll is essential for live updates)
                     const activeVideo = data.find(v => v.status === 'recording');
@@ -222,6 +221,7 @@
                 google.script.run
                     .withSuccessHandler((savedVideo) => {
                         this.saving = false;
+                        
                         // If it was a new video, the backend should return the updated object (with ID)
                         // This prevents creating duplicates if saved again
                         if (savedVideo && typeof savedVideo === 'object') {

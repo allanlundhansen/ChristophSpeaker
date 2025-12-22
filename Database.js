@@ -180,6 +180,12 @@ function saveVideo(data) {
 
   // Write the full row at once
   sheet.getRange(rowIndex, 1, 1, 19).setValues([rowData]);
+  
+  // Sanitize return object: Convert Date objects to strings for Apps Script serialization
+  if (data.date instanceof Date) {
+    data.date = data.date.toLocaleDateString();
+  }
+  
   return data;
 }
 
